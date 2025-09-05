@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main_layout}">
+    <head>
+        <title>Pokemon's</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div class="container" layout:fragment="content">
+            <label th:utext='${count}'>Pokemon's totales = </label>
+            <label th:each='pokemon : ${pokemons}'>Pikachu</label>
+            <a th:action='@{/details/{id}(id=${pokemon.url})}}'>show details</a>
+        </div>
+    </body>
+</html>
