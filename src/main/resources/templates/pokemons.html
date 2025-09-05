@@ -1,17 +1,114 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/main_layout}">
+      layout:decorate="~{layout}">
     <head>
         <title>Pokemon's</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            .card-hover-vibrate:hover {
+                animation: vibrate 0.3s linear 1;
+            }
+
+            @keyframes vibrate {
+                0% {
+                    transform: translate(0);
+                }
+                20% {
+                    transform: translate(-1px, 1px);
+                }
+                40% {
+                    transform: translate(-1px, -1px);
+                }
+                60% {
+                    transform: translate(1px, 1px);
+                }
+                80% {
+                    transform: translate(1px, -1px);
+                }
+                100% {
+                    transform: translate(0);
+                }
+            }
+
+        </style>
+
     </head>
     <body>
-        <div class="container" layout:fragment="content">
-            <label th:utext='${count}'>Pokemon's totales = </label>
-            <label th:each='pokemon : ${pokemons}'>Pikachu</label>
-            <a th:action='@{/details/{id}(id=${pokemon.url})}}'>show details</a>
+        <div class="container mt-3" layout:fragment="body">
+            <div class="row">
+                <div class="col-4">
+                    <div class="card card-hover-vibrate" style="width: 18rem;">
+                        <div class="m-3 p-3 border rounded bg-light shadow-sm">
+                            <a href="https://www.pokemon.com/el/pokedex/bulbasaur" target="_blank">
+                                <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png" 
+                                     class="img-fluid rounded" 
+                                     alt="Bulbasaur">
+                            </a>
+
+                            <p class="text-center mt-2 fw-bold">#001 Bulbasaur</p>
+                        </div>
+
+                        <div class="card-body">
+                            <h5 class="card-title">Card title</h5>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+                            <a href="#" class="btn btn-primary">Go somewhere</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="card card-hover-vibrate" style="width: 18rem;">
+                        <div class="m-3 p-3 border rounded bg-light shadow-sm">
+                            <a href="https://www.pokemon.com/el/pokedex/bulbasaur" target="_blank">
+                                <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png" 
+                                     class="img-fluid rounded" 
+                                     alt="Bulbasaur">
+                            </a>
+
+                            <p class="text-center mt-2 fw-bold">#001 Bulbasaur</p>
+                        </div>
+
+                        <div class="card-body">
+                            <h5 class="card-title">Card title</h5>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+                            <a href="#" class="btn btn-primary">Go somewhere</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="card card-hover-vibrate" style="width: 18rem;">
+                        <div class="m-3 p-3 border rounded bg-light shadow-sm">
+                            <a href="https://www.pokemon.com/el/pokedex/bulbasaur" target="_blank">
+                                <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png" 
+                                     class="img-fluid rounded" 
+                                     alt="Bulbasaur">
+                            </a>
+
+                            <p class="text-center mt-2 fw-bold">#001 Bulbasaur</p>
+                        </div>
+
+                        <div class="card-body">
+                            <h5 class="card-title">Card title</h5>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
+                            <a href="#" class="btn btn-primary">Go somewhere</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container mt-3 mb-3">
+                <div class="btn-toolbar d-flex justify-content-center" role="toolbar" aria-label="Toolbar with button groups">
+                    <div class="btn-group me-2" role="group" aria-label="First group">
+                        <button type="button" class="btn btn-primary">1</button>
+                        <button type="button" class="btn btn-primary">2</button>
+                        <button type="button" class="btn btn-primary">3</button>
+                        <button type="button" class="btn btn-primary">4</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
     </body>
 </html>
