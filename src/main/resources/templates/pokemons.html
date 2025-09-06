@@ -38,11 +38,11 @@
     <body>
         <div class="container mt-3" layout:fragment="body">
             <div class="row">
-                <div class="col-4">
+                <div class="col-4" th:each="pokemon : ${pokemons}">
                     <div class="card card-hover-vibrate" style="width: 18rem;">
                         <div class="m-3 p-3 border rounded bg-light shadow-sm">
                             <a href="https://www.pokemon.com/el/pokedex/bulbasaur" target="_blank">
-                                <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png" 
+                                <img th:src ="${pokemon.sprite.otherSprites.dreamWorld.front_default}"  
                                      class="img-fluid rounded" 
                                      alt="Bulbasaur">
                             </a>
@@ -57,44 +57,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div class="card card-hover-vibrate" style="width: 18rem;">
-                        <div class="m-3 p-3 border rounded bg-light shadow-sm">
-                            <a href="https://www.pokemon.com/el/pokedex/bulbasaur" target="_blank">
-                                <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png" 
-                                     class="img-fluid rounded" 
-                                     alt="Bulbasaur">
-                            </a>
-
-                            <p class="text-center mt-2 fw-bold">#001 Bulbasaur</p>
-                        </div>
-
-                        <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
-                            <a href="#" class="btn btn-primary">Go somewhere</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="card card-hover-vibrate" style="width: 18rem;">
-                        <div class="m-3 p-3 border rounded bg-light shadow-sm">
-                            <a href="https://www.pokemon.com/el/pokedex/bulbasaur" target="_blank">
-                                <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png" 
-                                     class="img-fluid rounded" 
-                                     alt="Bulbasaur">
-                            </a>
-
-                            <p class="text-center mt-2 fw-bold">#001 Bulbasaur</p>
-                        </div>
-
-                        <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
-                            <a href="#" class="btn btn-primary">Go somewhere</a>
-                        </div>
-                    </div>
-                </div>
+                
+                
             </div>
 
             <div class="container mt-3 mb-3">

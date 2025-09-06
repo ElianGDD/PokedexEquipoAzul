@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 @Controller
-@RequestMapping("/Pokemon")
+@RequestMapping("/Pokemons")
 public class ControllerPokemon {
 
     private final ServicePokemon servicePokemon;
@@ -20,13 +20,13 @@ public class ControllerPokemon {
         this.servicePokemon = servicePokemon;
     }
 
-    @GetMapping("/pokemons")
+    @GetMapping("/pokemon")
     public String GetAllPokemons(Model model, @RequestParam(required = false) int id) {
         try {
             if (id != 0) {
                 Mono<Pokemon> pokemon = servicePokemon.getOnePokemon(id);
                 model.addAttribute("pokemon", pokemon.block());
-                return "pokemon";
+                return "pokemons";
             } else {
                 Mono<GetAllPokemon> pokemos = servicePokemon.GetAllPokemons();
                 model.addAttribute("pokemos", pokemos.block());
