@@ -3,10 +3,93 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
     <head>
-        <title>Pokemon's</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pokémon's</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <style>
+            body {
+                background: #f0f8ff; /* azul claro */
+                font-family: 'Comic Sans MS', cursive, sans-serif;
+                color: #333;
+                margin: 0;
+                padding: 20px 0;
+            }
+            html, body {
+                height: 100%;
+                overflow-y: auto; /* Permite scroll vertical */
+                margin: 0;
+                padding: 0;
+            }
+
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 15px;
+            }
+
+            .row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
+                justify-content: center;
+            }
+
+            .col-4 {
+                flex: 0 0 calc(33.333% - 20px);
+                box-sizing: border-box;
+            }
+
+            @media (max-width: 768px) {
+                .col-4 {
+                    flex: 0 0 calc(50% - 20px);
+                }
+            }
+
+            @media (max-width: 480px) {
+                .col-4 {
+                    flex: 0 0 100%;
+                }
+            }
+
+            .card {
+                border-radius: 15px;
+                background: linear-gradient(135deg, #ffcb05 0%, #ff1c1c 100%);
+                box-shadow: 0 4px 15px rgba(255, 28, 28, 0.5);
+                color: white;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                cursor: pointer;
+                border: 3px solid #3b4cca; /* azul pokémon */
+            }
+
+            .card:hover {
+                transform: scale(1.05);
+                box-shadow: 0 8px 25px rgba(255, 28, 28, 0.8);
+            }
+
+            .card-img-top {
+                border-radius: 15px 15px 0 0;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                background: white;
+                padding: 10px;
+                max-height: 180px;
+                width: 100%;
+                object-fit: contain;
+            }
+
+            .card-body {
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.85);
+                border-radius: 0 0 15px 15px;
+                color: #333;
+                text-align: center;
+                font-weight: bold;
+                font-size: 1.2rem;
+                text-transform: capitalize;
+                text-shadow: 1px 1px 2px #ff1c1c;
+            }
+
+            /* Vibrate effect on hover */
             .card-hover-vibrate:hover {
                 animation: vibrate 0.3s linear 1;
             }
@@ -32,33 +115,37 @@
                 }
             }
 
+            /* Pagination Buttons */
+            .btn-toolbar {
+                margin-top: 30px;
+            }
+            .btn-group .btn {
+                margin: 0 5px;
+                background-color: #3b4cca;
+                border-color: #2a368f;
+                color: white;
+                font-weight: bold;
+                border-radius: 8px;
+                padding: 8px 16px;
+                transition: background-color 0.3s ease;
+            }
+            .btn-group .btn:hover {
+                background-color: #2a368f;
+            }
         </style>
-
     </head>
     <body>
-        <div class="container mt-3" layout:fragment="body">
+        <div class="container" layout:fragment="body">
             <div class="row">
-                <div class="col-4" th:each="pokemon : ${pokemons}">
-                    <div class="card card-hover-vibrate" style="width: 18rem;">
-                        <div class="m-3 p-3 border rounded bg-light shadow-sm">
-                            <a href="https://www.pokemon.com/el/pokedex/bulbasaur" target="_blank">
-                                <img th:src ="${pokemon.sprite.otherSprites.dreamWorld.front_default}"  
-                                     class="img-fluid rounded" 
-                                     alt="Bulbasaur">
-                            </a>
-
-                            <p class="text-center mt-2 fw-bold">#001 Bulbasaur</p>
-                        </div>
-
+                <div class="col-4" th:each="pokemon : ${pokemons.results}">
+                    <div class="card card-hover-vibrate">
+                        <img th:src="@{'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + ${#strings.substring(pokemon.url, 34, pokemon.url.length() - 1)} + '.png'}"
+                             class="card-img-top" alt="Imagen de Pokémon" />
                         <div class="card-body">
-                            <h5 class="card-title">Card title</h5>
-                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card’s content.</p>
-                            <a href="#" class="btn btn-primary">Go somewhere</a>
+                            <label th:text="${pokemon.name}"></label>
                         </div>
                     </div>
                 </div>
-                
-                
             </div>
 
             <div class="container mt-3 mb-3">
@@ -71,8 +158,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
-
     </body>
 </html>

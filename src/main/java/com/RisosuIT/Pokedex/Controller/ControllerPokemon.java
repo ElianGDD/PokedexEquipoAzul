@@ -6,12 +6,10 @@ import com.RisosuIT.Pokedex.Service.ServicePokemon;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import reactor.core.publisher.Mono;
 
 @Controller
-@RequestMapping("/Pokemons")
 public class ControllerPokemon {
 
     private final ServicePokemon servicePokemon;
@@ -20,22 +18,23 @@ public class ControllerPokemon {
         this.servicePokemon = servicePokemon;
     }
 
-    @GetMapping("/pokemon")
-    public String GetAllPokemons(Model model, @RequestParam(required = false) int id) {
+    @GetMapping("/pokemons")
+    public String GetAllPokemons(Model model) {
         try {
-            if (id != 0) {
-                Mono<Pokemon> pokemon = servicePokemon.getOnePokemon(id);
-                model.addAttribute("pokemon", pokemon.block());
-                return "pokemons";
-            } else {
-                Mono<GetAllPokemon> pokemos = servicePokemon.GetAllPokemons();
-                model.addAttribute("pokemos", pokemos.block());
-                return "pokemons";
-            }
+            GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
+            model.addAttribute("pokemons", pokemos);
+            return "pokemons";
         } catch (Exception ex) {
             model.addAttribute("errores", ex.getLocalizedMessage());
             return "errores";
         }
+    }
+
+    @GetMapping("/pokemon")
+    public String GetOnePokemon(@PathVariable(required = false) int id, Model model) {
+        Mono<Pokemon> pokemon = servicePokemon.getOnePokemon(id);
+        model.addAttribute("pokemon", pokemon.block());
+        return "pokemon";
     }
 
 }
