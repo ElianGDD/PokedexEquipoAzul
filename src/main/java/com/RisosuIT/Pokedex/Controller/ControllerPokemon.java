@@ -56,7 +56,7 @@ public class ControllerPokemon {
     }
 
     @GetMapping("/pokemonXNTipo")
-    public List<Pokemon> getPokemonXNTipo(@RequestParam List<String> types) {
+    public List<Pokemon> GetPokemonXNTipo(@RequestParam List<String> types) {
         GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
         List<NamedAPIResource> listaDePokemones = pokemos.getResults();
         List<Pokemon> listaPokemones = new ArrayList<>();
@@ -72,6 +72,24 @@ public class ControllerPokemon {
                 .collect(Collectors.toList());
 
         return listaFiltradaXTipo;
+    }
+
+    @GetMapping("/pokemonXNombre")
+    public List<Pokemon> GetPokemonXNombre(@RequestParam String nombre) {
+        GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
+        List<NamedAPIResource> listaDePokemones = pokemos.getResults();
+        List<Pokemon> listaPokemones = new ArrayList<>();
+
+        for (NamedAPIResource pokemon : listaDePokemones) {
+            Pokemon descripcionPokemon = servicePokemon.getPokemonByName(pokemon.getName()).block();
+            listaPokemones.add(descripcionPokemon);
+        }
+
+        List<Pokemon> listaFiltradaNombre = listaPokemones.stream()
+                .filter(poke -> poke.getName().toLowerCase().contains(nombre.toLowerCase()))
+                .collect(Collectors.toList());
+        return listaFiltradaNombre;
+
     }
 
 }
