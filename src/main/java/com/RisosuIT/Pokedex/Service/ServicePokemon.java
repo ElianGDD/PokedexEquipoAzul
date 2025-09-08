@@ -2,6 +2,7 @@ package com.RisosuIT.Pokedex.Service;
 
 import com.RisosuIT.Pokedex.DAO.GetAllPokemon;
 import com.RisosuIT.Pokedex.DAO.Pokemon;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -11,7 +12,7 @@ public class ServicePokemon {
 
     private final WebClient webClient;
 
-    public ServicePokemon(WebClient webClient) {
+    public ServicePokemon(@Qualifier("pokemonWebClient")WebClient webClient) {
         this.webClient = webClient;
     }
 

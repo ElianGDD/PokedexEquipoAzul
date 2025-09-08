@@ -11,8 +11,10 @@ public class WebClientConfig {
 
     @Value("${base.url}")
     private String URL_BASE;
+    @Value("${base.urlType}")
+    private String URL_BASE_TYPE;
 
-    @Bean
+    @Bean(name = "pokemonWebClient")
     public WebClient webClient(WebClient.Builder builder) {
         ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
                 .codecs(configurer -> configurer
@@ -26,4 +28,20 @@ public class WebClientConfig {
                 .defaultHeader("Accept", "application/json")
                 .build();
     }
+    
+    @Bean(name = "typeWebClient")
+    public WebClient webClientType(WebClient.Builder builder){
+        ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
+                .codecs(configurer -> configurer
+                .defaultCodecs()
+                .maxInMemorySize(16*1024*1024)
+                ).build();
+        
+        return builder
+                .exchangeStrategies(exchangeStrategies)
+                .baseUrl(URL_BASE_TYPE)
+                .defaultHeader("Accept", "application/json")
+                .build();
+    }
+    
 }
