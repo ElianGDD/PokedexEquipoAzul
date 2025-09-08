@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 public class ServiceType {
     private WebClient webClient;
     
-    public ServiceType(@Qualifier("typeClient") WebClient webClient){
+    public ServiceType(@Qualifier("typeWebClient") WebClient webClient){
         this.webClient = webClient;
     }
     

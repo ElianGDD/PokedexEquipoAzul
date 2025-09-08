@@ -32,5 +32,13 @@ public class ServicePokemon {
                         response -> Mono.error(new RuntimeException("Error al obtener el Pokémon")))
                 .bodyToMono(Pokemon.class);
     }
+    public Mono<Pokemon> getPokemonByName(String nombre){
+        return webClient.get()
+                .uri("/" + nombre)
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        response -> Mono.error(new RuntimeException("Error al obtener el Pokémon")))
+                .bodyToMono(Pokemon.class);
+    }
 
 }
