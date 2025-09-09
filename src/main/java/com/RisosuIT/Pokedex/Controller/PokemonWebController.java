@@ -5,10 +5,19 @@ import com.RisosuIT.Pokedex.DAO.NamedAPIResource;
 import com.RisosuIT.Pokedex.Service.ServicePokemon;
 import com.RisosuIT.Pokedex.Service.ServiceType;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+/**
+ * Controller web + JSON API para listar y buscar pokémones. - /pokemons ->
+ * vista Thymeleaf (inicial) - /api/pokemons -> búsqueda/paginación por nombre
+ * y/o tipo (JSON) - /api/pokemons/by-types -> intersección por múltiples tipos
+ * (JSON)
+ */
 @Controller
 public class PokemonWebController {
 
@@ -25,10 +34,11 @@ public class PokemonWebController {
         List<NamedAPIResource> page = pokemonService.searchCatalog("", null, 0, 24);
         model.addAttribute("pokemons", page);
 
-        // Se asume que TypeService expone un método bloqueante que devuelve GetAllTypes
-        GetAllTypes tipos = typeService.fetchAllTypes();
+        GetAllTypes tipos = typeService.fetchAllTypesCached(); // método bloqueante/cached
         model.addAttribute("types", tipos != null ? tipos.getResults() : List.of());
 
         return "pokemons";
     }
+
+    // NO agregar aquí métodos que expongan /api/...
 }
