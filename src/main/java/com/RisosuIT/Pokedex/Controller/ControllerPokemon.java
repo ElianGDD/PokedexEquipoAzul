@@ -74,7 +74,7 @@ public class ControllerPokemon {
     }
 
     @PostMapping("/pokemonXNombre")
-    public List<Pokemon> GetPokemonXNombre(@RequestParam String nombre, Model model) {
+    public String GetPokemonXNombre(@RequestParam String nombre, Model model) {
         GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
         List<NamedAPIResource> listaDePokemones = pokemos.getResults();
         List<Pokemon> listaPokemones = new ArrayList<>();
@@ -87,7 +87,33 @@ public class ControllerPokemon {
         List<Pokemon> listaFiltradaNombre = listaPokemones.stream()
                 .filter(poke -> poke.getName().toLowerCase().contains(nombre.toLowerCase()))
                 .collect(Collectors.toList());
-        return listaFiltradaNombre;
+
+        model.addAttribute("pokemons", listaFiltradaNombre);
+        return "pokemons";
+    }
+
+    @PostMapping("/pokemonXEspecie")
+    public String GetPokemonXEspecie(@RequestParam String especie, Model model) {
+        GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
+        List<NamedAPIResource> listaDePokemones = pokemos.getResults();
+        List<Pokemon> listaPokemones = new ArrayList<>();
+
+        for (NamedAPIResource pokemon : listaDePokemones) {
+            Pokemon descripcionPokemon = servicePokemon.getPokemonByName(pokemon.getName()).block();
+            listaPokemones.add(descripcionPokemon);
+        }
+
+        List<Pokemon> listaFiltrada = listaPokemones.stream()
+                .filter(poke -> poke.getSpecies().getName().equalsIgnoreCase(especie))
+                .collect(Collectors.toList());
+
+        model.addAttribute("pokemons", listaFiltrada);
+        return "pokemons";
+    }
+
+    @GetMapping("/pruebas")
+    public String pruebas() {
+        return "index";
     }
 
 }
