@@ -4,8 +4,6 @@ import com.RisosuIT.Pokedex.DAO.GetAllPokemon;
 import com.RisosuIT.Pokedex.DAO.GetAllTypes;
 import com.RisosuIT.Pokedex.DAO.NamedAPIResource;
 import com.RisosuIT.Pokedex.DAO.Pokemon;
-import com.RisosuIT.Pokedex.DAO.Type;
-import com.RisosuIT.Pokedex.DAO.Types;
 import com.RisosuIT.Pokedex.Service.ServicePokemon;
 import com.RisosuIT.Pokedex.Service.ServiceType;
 import java.util.ArrayList;
@@ -89,7 +87,6 @@ public class ControllerPokemon {
                 .filter(poke -> poke.getName().toLowerCase().contains(nombre.toLowerCase()))
                 .collect(Collectors.toList());
         return listaFiltradaNombre;
-
     }
 
 }
