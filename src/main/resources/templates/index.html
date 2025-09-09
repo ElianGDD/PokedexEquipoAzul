@@ -1,15 +1,38 @@
 <!DOCTYPE html>
-<!--
-Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-Click nbfs://nbhost/SystemFileSystem/Templates/Other/html.html to edit this template
--->
-<html>
-    <head>
-        <title>TODO supply a title</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-        <div>TODO write content</div>
-    </body>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Pokédex - Filtros</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+    <h1>Bienvenido a la Pokédex</h1>
+
+    <h2>Ver todos los Pokémon</h2>
+    <form action="/pokemons" method="get">
+        <button type="submit">Ver todos</button>
+    </form>
+
+    <h2>Buscar por tipo</h2>
+    <form action="/pokemonXNTipo" method="post">
+        <label for="types">Tipos (separados por coma):</label>
+        <input type="text" id="types" name="types" placeholder="fire,water,grass" />
+        <button type="submit">Buscar</button>
+    </form>
+
+    <h2>Buscar por nombre</h2>
+    <form action="/pokemonXNombre" method="post">
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" placeholder="pikachu" />
+        <button type="submit">Buscar</button>
+    </form>
+
+    <h2>Buscar por especie</h2>
+    <form action="/pokemonXEspecie" method="post">
+        <label for="especie">Especie:</label>
+        <input type="text" id="especie" name="especie" placeholder="pikachu" />
+        <button type="submit">Buscar</button>
+    </form>
+
+</body>
 </html>
