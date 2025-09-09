@@ -212,7 +212,7 @@
         <div class="modal fade" id="pokeModal" tabindex="-1" aria-hidden="true" aria-labelledby="pokeModalTitle">
             <div class="modal-dialog modal-xl modal-dialog-centered">
                 <div class="modal-content">
-                    <div class="modal-header bg-danger text-white">
+                    <div id="pokeModalHeader" class="modal-header bg-danger text-white">
                         <h5 class="modal-title" id="pokeModalTitle">Pokémon</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
@@ -355,6 +355,15 @@
                     });
                 }
 
+                function applyTypeColors(element, types) {
+                    if (!element || !types || types.length === 0)
+                        return;
+                    const c1 = typeColor(types[0]) || '#ddd';
+                    const c2 = types[1] ? (typeColor(types[1]) || '#eee') : c1;
+                    element.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+                    element.style.color = '#fff';
+                }
+
                 function renderCards(items) {
                     cardsContainer.innerHTML = '';
                     items.forEach(item => {
@@ -388,7 +397,28 @@
                         inner.appendChild(meta);
                         card.appendChild(inner);
                         cardsContainer.appendChild(card);
+
+                        // Aplicar colores según tipo en la card
+                        if (item.url && inner) {
+                            fetch(item.url)
+                                    .then(r => r.json())
+                                    .then(poke => {
+                                        const types = poke.types.map(t => t.type.name);
+
+                                        applyTypeColors(inner, types);
+
+                                        const badge = inner.querySelector('.type-badge');
+                                        if (badge) {
+                                            badge.textContent = types.join(' / ');
+                                            badge.style.background = typeColor(types[0]) || '#ddd';
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.warn('Error al obtener datos del Pokémon:', item.url, err);
+                                    });
+                        }
                     });
+
                     infoText.textContent = `${items.length} Pokémon`;
                     pageInfo.textContent = `Página ${state.page + 1}`;
                     prevBtn.disabled = state.page === 0;
@@ -396,6 +426,99 @@
                     loadStatus.textContent = 'listo';
                 }
 
+                // Cuando abres el modal y cargas el detalle:
+                cardsContainer.addEventListener('click', evt => {
+                    const card = evt.target.closest('.card-item');
+                    if (!card)
+                        return;
+                    const url = card.dataset.url;
+                    const id = idFromUrl(url);
+                    if (!id)
+                        return;
+
+                    titleEl.textContent = 'Cargando...';
+                    imgEl.src = '';
+                    thumbsEl.innerHTML = '';
+                    typesEl.innerHTML = '';
+                    basicEl.textContent = '';
+                    statsEl.innerHTML = '';
+                    abilitiesEl.innerHTML = '';
+                    movesEl.textContent = '';
+                    linkEl.href = `/api/pokemons/${id}`;
+
+                    fetch(`/api/pokemons/${id}`).then(r => {
+                        if (!r.ok)
+                            throw new Error(r.status);
+                        return r.json();
+                    }).then(p => {
+                        titleEl.textContent = `#${p.id} ${p.name}`;
+                        stopModalAutoplay();
+
+                        const spriteList = [
+                            p.sprites?.other?.['official-artwork']?.front_default,
+                            p.sprites?.front_default,
+                            p.sprites?.back_default,
+                            p.sprites?.front_shiny,
+                            p.sprites?.back_shiny
+                        ].filter(Boolean);
+
+                        thumbsEl.innerHTML = '';
+                        spriteList.forEach((src, idx) => {
+                            const t = document.createElement('div');
+                            t.className = 'thumb';
+                            t.innerHTML = `<img src="${src}" alt="sprite" style="max-width:100%;max-height:100%;">`;
+                            t.addEventListener('click', () => {
+                                stopModalAutoplay();
+                                imgEl.src = src;
+                                thumbsEl.querySelectorAll('.thumb').forEach(n => n.classList.remove('selected'));
+                                t.classList.add('selected');
+                                modalSprite.list = spriteList;
+                                modalSprite.idx = spriteList.indexOf(src);
+                            });
+                            thumbsEl.appendChild(t);
+                        });
+
+                        const main = p.sprites?.other?.['official-artwork']?.front_default || p.sprites?.front_default || spriteList[0] || '';
+                        imgEl.src = main;
+
+                        const types = (p.types || []).map(t => t.type.name);
+
+                        // Aplica colores al header del modal
+                        const modalHeader = document.getElementById('pokeModalHeader');
+                        applyTypeColors(modalHeader, types);
+
+                        // Renderizamos badges de tipos en el modal
+                        typesEl.innerHTML = types.map(type => `<div class="type-badge" style="background:${typeColor(type)}">${type}</div>`).join(' ');
+
+                        basicEl.innerHTML = `Altura: ${p.height / 10} m · Peso: ${p.weight / 10} kg · Exp base: ${p.base_experience || '-'}`;
+
+                        const MAX = 255;
+                        statsEl.innerHTML = '';
+                        (p.stats || []).forEach(s => {
+                            const pct = Math.round((s.base_stat / MAX) * 100);
+                            const row = document.createElement('div');
+                            row.className = 'stat-row';
+                            row.innerHTML = `<div class="stat-label">${s.stat.name}</div><div class="stat-bar" style="flex:1;height:10px;background:#e9ecef;border-radius:6px;overflow:hidden;"><div class="stat-fill" style="width:${pct}%;height:100%;border-radius:6px;background:${typeColor(p.types[0]?.type?.name || '') || '#6c757d'}"></div></div><div style="width:48px;text-align:right;font-size:0.9rem"><strong>${s.base_stat}</strong></div>`;
+                            statsEl.appendChild(row);
+                        });
+
+                        abilitiesEl.innerHTML = (p.abilities || []).map(a => `<div>${a.ability.name}${a.is_hidden ? ' (oculta)' : ''}</div>`).join('');
+                        movesEl.innerHTML = (p.moves || []).slice(0, 8).map(m => `<span class="badge bg-light text-dark me-1 mb-1">${m.move.name}</span>`).join(' ');
+                        linkEl.href = `https://pokeapi.co/api/v2/pokemon/${p.id}`;
+
+                        modalSprite.list = spriteList;
+                        modalSprite.idx = 0;
+                        startModalAutoplay(spriteList, 0);
+                        if (bsModal)
+                            bsModal.show();
+                    }).catch(err => {
+                        titleEl.textContent = 'Error';
+                        basicEl.textContent = 'No se pudieron obtener los datos.';
+                        if (bsModal)
+                            bsModal.show();
+                        console.error('poke fetch', err);
+                    });
+                });
                 async function fetchPage() {
                     loadStatus.textContent = 'cargando...';
                     const params = new URLSearchParams({name: state.query || '', type: state.type || '', page: state.page, size: state.pageSize});
