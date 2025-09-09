@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
@@ -53,7 +54,7 @@ public class ControllerPokemon {
         return tiposPokemon;
     }
 
-    @GetMapping("/pokemonXNTipo")
+    @PostMapping("/pokemonXNTipo")
     public List<Pokemon> GetPokemonXNTipo(@RequestParam List<String> types) {
         GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
         List<NamedAPIResource> listaDePokemones = pokemos.getResults();
@@ -72,8 +73,8 @@ public class ControllerPokemon {
         return listaFiltradaXTipo;
     }
 
-    @GetMapping("/pokemonXNombre")
-    public List<Pokemon> GetPokemonXNombre(@RequestParam String nombre) {
+    @PostMapping("/pokemonXNombre")
+    public List<Pokemon> GetPokemonXNombre(@RequestParam String nombre, Model model) {
         GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
         List<NamedAPIResource> listaDePokemones = pokemos.getResults();
         List<Pokemon> listaPokemones = new ArrayList<>();
