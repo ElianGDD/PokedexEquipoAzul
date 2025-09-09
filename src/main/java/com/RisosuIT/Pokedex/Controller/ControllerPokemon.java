@@ -75,7 +75,7 @@ public class ControllerPokemon {
     }
 
     @GetMapping("/pokemonXNombre")
-    public List<Pokemon> GetPokemonXNombre(@RequestParam String nombre) {
+    public List<Pokemon> GetPokemonXNombre(@RequestParam Pokemon pokemons) {
         GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
         List<NamedAPIResource> listaDePokemones = pokemos.getResults();
         List<Pokemon> listaPokemones = new ArrayList<>();
@@ -86,10 +86,12 @@ public class ControllerPokemon {
         }
 
         List<Pokemon> listaFiltradaNombre = listaPokemones.stream()
-                .filter(poke -> poke.getName().toLowerCase().contains(nombre.toLowerCase()))
+                .filter(poke -> poke.getName().toLowerCase().contains(pokemons.getName().toLowerCase()))
                 .collect(Collectors.toList());
         return listaFiltradaNombre;
 
     }
+   
+    
 
 }
