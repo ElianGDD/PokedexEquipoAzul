@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+
+      layout:decorate="~{layout}">
+    <head>
+        <title>Cargando</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    </head>
+    <body>
+        <div class="container py-5" layout:fragment="body">
+            <div class="d-flex flex-column align-items-center justify-content-center" 
+
+                 style="min-height:70vh">
+                <div class="pokeball mb-4"></div>
+                <h3 class="mb-2">Cargando Pokédex</h3>
+                <div class="progress w-75" style="max-width:640px">
+                    <div id="bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+
+                         style="width:0%"></div>
+                </div>
+                <p id="txt" class="mt-2 text-secondary">0 / 0</p>
+            </div>
+        </div>
+    <th:block layout:fragment="scripts">
+        <script>
+        </script>
+    </th:block>
+</body>
+</html>
+
