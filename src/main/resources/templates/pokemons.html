@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
@@ -10,185 +10,206 @@
             :root{
                 --pokedex-red:#d32f2f;
                 --pokedex-dark:#7b0f0f;
-                --accent:#f8f9fa;
+                --muted:#6b6b6b;
+                --card-radius:12px;
+                --gap:16px;
             }
-            .controls {
+            .controls{
                 display:flex;
                 gap:12px;
                 align-items:center;
-                margin-bottom:12px;
+                margin-bottom:18px;
                 flex-wrap:wrap;
             }
-            .card-grid {
-                display:flex;
-                flex-wrap:wrap;
-                gap:16px;
+            .card-grid{
+                display:grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap:var(--gap);
             }
-            .card-item {
-                width:calc(25% - 12px);
-                min-width:200px;
+            @media (max-width:991px){
+                .card-grid{
+                    grid-template-columns: repeat(2,1fr);
+                }
+            }
+            @media (max-width:575px){
+                .card-grid{
+                    grid-template-columns: 1fr;
+                }
+            }
+            .card-item{
                 display:flex;
             }
-            .poke-card {
+            .poke-card{
                 width:100%;
-                border-radius:12px;
+                border-radius:var(--card-radius);
                 background:linear-gradient(#fff,#f8f8f8);
-                box-shadow:0 6px 18px rgba(0,0,0,.06);
+                box-shadow:0 8px 24px rgba(15,15,15,0.06);
                 overflow:hidden;
                 display:flex;
                 flex-direction:column;
                 cursor:pointer;
-                transition:transform .18s;
+                transition:transform .18s ease, box-shadow .18s ease;
+                border:1px solid rgba(0,0,0,0.04);
             }
-            .poke-card:hover{
+            .poke-card:focus, .poke-card:hover{
                 transform:translateY(-6px);
+                box-shadow:0 12px 36px rgba(15,15,15,0.10);
+                outline:none;
             }
             .poke-thumb{
-                height:140px;
+                height:160px;
                 display:flex;
                 align-items:center;
                 justify-content:center;
-                background:#fafafa;
+                background:linear-gradient(180deg,#fbfbfb,#f3f3f5);
             }
             .poke-thumb img{
                 max-width:100%;
                 max-height:100%;
                 object-fit:contain;
+                filter:drop-shadow(0 8px 20px rgba(0,0,0,0.06));
+                transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+                will-change: transform;
             }
+            .thumb-img.sprite-animated{
+                transform: translateY(-6px) scale(1.03);
+                filter: drop-shadow(0 10px 24px rgba(0,0,0,0.12));
+                animation: spritePulse 1.2s ease-in-out infinite;
+            }
+            @keyframes spritePulse{
+                0%{
+                    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.10));
+                }
+                50%{
+                    filter: drop-shadow(0 14px 30px rgba(0,0,0,0.14));
+                }
+                100%{
+                    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.10));
+                }
+            }
+            #pokeModal .sprite-playing{
+                transform-origin:center;
+                animation: modalBounce 1.4s ease-in-out infinite;
+            }
+            @keyframes modalBounce{
+                0%{
+                    transform:translateY(0);
+                }
+                50%{
+                    transform:translateY(-8px);
+                }
+                100%{
+                    transform:translateY(0);
+                }
+            }
+
             .poke-meta{
-                padding:10px;
+                padding:12px;
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:8px;
             }
             .poke-meta h5{
                 margin:0;
                 text-transform:capitalize;
                 color:var(--pokedex-dark);
+                font-size:1rem;
             }
-            .poke-meta .sub{
+            .sub{
                 font-size:.85rem;
-                color:#666;
-                margin-top:6px;
+                color:var(--muted);
+            }
+            .type-badge{
+                padding:6px 10px;
+                border-radius:999px;
+                color:#fff;
+                font-size:.75rem;
+                text-transform:capitalize;
+                display:inline-block;
+                margin-left:6px;
             }
             .pagination-controls{
                 display:flex;
-                gap:8px;
+                gap:12px;
                 align-items:center;
                 justify-content:space-between;
-                margin-top:16px;
+                margin-top:18px;
                 flex-wrap:wrap;
             }
-            .hidden{
-                display:none !important;
-            }
-            @media (max-width:991px){
-                .card-item{
-                    width:calc(50% - 12px);
-                }
-            }
-            @media (max-width:575px){
-                .card-item{
-                    width:100%;
-                }
-            }
-
-            /* Modal styles (sprites gallery + stats bars) */
-            #pokeThumbs .thumb {
-                width:72px;
-                height:72px;
+            .skeleton{
+                background: linear-gradient(90deg,#eeeeee 25%, #f6f6f6 37%, #eeeeee 63%);
+                background-size: 400% 100%;
+                animation: shimmer 1.2s linear infinite;
                 border-radius:8px;
-                overflow:hidden;
-                background:#fff;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                border:2px solid transparent;
-                cursor:pointer;
-                transition:transform .12s, border-color .12s;
             }
-            #pokeThumbs .thumb.selected {
-                border-color:var(--pokedex-red);
-                transform:scale(1.03);
-            }
-            .stat-row {
-                display:flex;
-                align-items:center;
-                gap:8px;
-                margin-bottom:8px;
-            }
-            .stat-label {
-                width:90px;
-                font-size:0.85rem;
-                text-transform:capitalize;
-                color:#333;
-            }
-            .stat-bar {
-                flex:1;
-                height:10px;
-                background:#e9ecef;
-                border-radius:6px;
-                overflow:hidden;
-            }
-            .stat-bar > .stat-fill {
-                height:100%;
-                border-radius:6px;
-                transition:width .4s ease;
-                background:#6c757d;
-            }
-            .type-badge {
-                padding:4px 8px;
-                border-radius:999px;
-                color:#fff;
-                font-size:.8rem;
-                text-transform:capitalize;
+            @keyframes shimmer{
+                0%{
+                    background-position:200% 0
+                }
+                100%{
+                    background-position:-200% 0
+                }
             }
         </style>
     </head>
 
     <body layout:fragment="body">
         <div class="container py-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
                 <h1 class="mb-0">Pokédex</h1>
+                <div class="text-muted small" id="totalInfo">—</div>
             </div>
 
             <div class="controls">
-                <input id="searchInput" class="form-control form-control-sm" placeholder="Buscar por nombre..." style="min-width:220px">
-                <select id="pageSize" class="form-select form-select-sm" style="width:120px">
+                <div class="input-group" style="min-width:260px;">
+                    <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
+                    <input id="searchInput" class="form-control form-control-sm" placeholder="Buscar por nombre..." aria-label="Buscar">
+                </div>
+
+                <select id="typeSelect" class="form-select form-select-sm" style="width:160px;">
+                    <option value="">Todos los tipos</option>
+                    <option th:each="t : ${types}" th:value="${t.name}" th:text="${t.name}"></option>
+                </select>
+
+                <select id="pageSize" class="form-select form-select-sm" style="width:120px;">
                     <option value="8">8 / pág</option>
                     <option value="12" selected>12 / pág</option>
                     <option value="24">24 / pág</option>
                 </select>
-                <div class="ms-auto text-muted" id="infoText">0 Pokémon</div>
+
+                <div class="ms-auto d-flex gap-2">
+                    <button id="prevBtn" class="btn btn-sm btn-outline-secondary" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+                    <button id="nextBtn" class="btn btn-sm btn-outline-secondary" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></button>
+                </div>
             </div>
 
-            <div id="cards" class="card-grid">
-                <!-- Server-rendered cards -->
-                <div th:each="pokemon : ${pokemons.results}"
-                     class="card-item"
-                     th:attr="data-url=${pokemon.url},data-name=${pokemon.name}">
+            <div id="cards" class="card-grid" aria-live="polite">
+                <!-- server fallback -->
+                <div th:each="pokemon : ${pokemons}" class="card-item" th:attr="data-url=${pokemon.url},data-name=${pokemon.name}">
                     <div class="poke-card" role="button" tabindex="0">
                         <div class="poke-thumb">
-                            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" alt="sprite" class="thumb-img">
+                            <img data-src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" alt="sprite" class="thumb-img">
                         </div>
                         <div class="poke-meta">
-                            <h5 th:text="${pokemon.name}">nombre</h5>
-                            <div class="sub">#<span class="poke-id">?</span></div>
+                            <div>
+                                <h5 th:text="${pokemon.name}">nombre</h5>
+                                <div class="sub">#<span class="poke-id">?</span></div>
+                            </div>
+                            <div class="text-end"><span class="type-badge" style="background:var(--pokedex-red)">?</span></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="pagination-controls">
-                <div>
-                    <button id="prevBtn" class="btn btn-sm btn-outline-secondary">Anterior</button>
-                    <button id="nextBtn" class="btn btn-sm btn-outline-secondary">Siguiente</button>
-                </div>
-                <div class="text-center">
-                    <small id="pageInfo">Página 1 / 1</small>
-                </div>
+                <div class="text-muted small" id="pageInfo">Página 1</div>
+                <div class="text-end"><small class="text-muted">Carga: <span id="loadStatus">listo</span></small></div>
             </div>
         </div>
 
-        <!-- Mejor modal con sprites y stats -->
-        <div class="modal fade" id="pokeModal" tabindex="-1" aria-hidden="true">
+        <!-- Modal -->
+        <div class="modal fade" id="pokeModal" tabindex="-1" aria-hidden="true" aria-labelledby="pokeModalTitle">
             <div class="modal-dialog modal-xl modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header bg-danger text-white">
@@ -212,16 +233,11 @@
                             <div class="flex-fill">
                                 <h6 class="mb-2">Stats</h6>
                                 <div id="pokeModalStats" class="mb-3"></div>
-
                                 <h6 class="mb-2">Habilidades</h6>
                                 <div id="pokeModalAbilities" class="mb-2"></div>
-
                                 <h6 class="mb-2">Movimientos (top)</h6>
                                 <div id="pokeModalMoves" class="mb-2 small text-muted"></div>
-
-                                <div class="mt-3">
-                                    <a id="pokeModalLink" class="btn btn-sm btn-outline-danger" target="_blank" rel="noopener">Abrir en PokéAPI</a>
-                                </div>
+                                <div class="mt-3"><a id="pokeModalLink" class="btn btn-sm btn-outline-danger" target="_blank" rel="noopener">Abrir en PokéAPI</a></div>
                             </div>
                         </div>
                     </div>
@@ -233,16 +249,16 @@
 
     <th:block layout:fragment="scripts">
         <script>
-            /* Vista hija: cliente puro, sin jQuery necesario */
             document.addEventListener('DOMContentLoaded', () => {
                 const cardsContainer = document.getElementById('cards');
-                const nodes = Array.from(cardsContainer.querySelectorAll('.card-item'));
                 const searchInput = document.getElementById('searchInput');
+                const typeSelect = document.getElementById('typeSelect');
                 const pageSizeSelect = document.getElementById('pageSize');
                 const prevBtn = document.getElementById('prevBtn');
                 const nextBtn = document.getElementById('nextBtn');
                 const pageInfo = document.getElementById('pageInfo');
-                const infoText = document.getElementById('infoText');
+                const infoText = document.getElementById('totalInfo');
+                const loadStatus = document.getElementById('loadStatus');
 
                 const modalEl = document.getElementById('pokeModal');
                 const bsModal = (window.bootstrap && modalEl) ? new bootstrap.Modal(modalEl) : null;
@@ -256,85 +272,181 @@
                 const movesEl = document.getElementById('pokeModalMoves');
                 const linkEl = document.getElementById('pokeModalLink');
 
-                let state = {query: '', page: 0, pageSize: parseInt(pageSizeSelect.value, 10)};
+                let state = {query: '', type: '', page: 0, pageSize: parseInt(pageSizeSelect.value, 10)};
+                const ID_RE = /\/(\d+)\/?$/;
 
                 function idFromUrl(url) {
                     if (!url)
                         return null;
-                    const parts = url.split('/').filter(Boolean);
-                    return parts.length ? parts[parts.length - 1] : null;
+                    const m = url.match(ID_RE);
+                    return m ? m[1] : null;
+                }
+                function debounce(fn, ms) {
+                    let t;
+                    return (...a) => {
+                        clearTimeout(t);
+                        t = setTimeout(() => fn(...a), ms);
+                    };
                 }
 
-                // set immediate thumbnails and ids for server-rendered cards
-                nodes.forEach(node => {
-                    const url = node.dataset.url;
-                    const name = node.dataset.name;
-                    const id = idFromUrl(url);
-                    const img = node.querySelector('.thumb-img');
-                    const idSpan = node.querySelector('.poke-id');
-                    if (id) {
-                        img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-                        idSpan.textContent = id;
-                    } else {
-                        img.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
-                        idSpan.textContent = '?';
+                const imgObserver = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(e => {
+                        if (e.isIntersecting) {
+                            const img = e.target;
+                            const src = img.dataset.src;
+                            if (src)
+                                img.src = src;
+                            obs.unobserve(img);
+                        }
+                    });
+                }, {root: null, rootMargin: '200px', threshold: 0.1});
+
+                function setHoverAnimation(img, id) {
+                    if (!img || !id)
+                        return;
+                    // generation-V animated gif path (may not exist for all ids)
+                    const anim = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
+                    img.dataset.anim = anim;
+                    img.addEventListener('mouseenter', () => {
+                        // save current
+                        if (!img._staticSrc)
+                            img._staticSrc = img.src || img.dataset.src || '';
+                        // try animated
+                        img.src = anim;
+                        img.classList.add('sprite-animated');
+                    });
+                    img.addEventListener('mouseleave', () => {
+                        if (img._staticSrc !== undefined) {
+                            img.src = img._staticSrc;
+                            img._staticSrc = undefined;
+                        }
+                        img.classList.remove('sprite-animated');
+                    });
+                }
+
+                // modal sprite autoplay
+                const modalSprite = {interval: null, list: [], idx: 0};
+                function startModalAutoplay(list, initial = 0) {
+                    stopModalAutoplay();
+                    if (!Array.isArray(list) || list.length === 0)
+                        return;
+                    modalSprite.list = list;
+                    modalSprite.idx = initial % list.length;
+                    imgEl.src = list[modalSprite.idx];
+                    imgEl.classList.add('sprite-playing');
+                    modalSprite.interval = setInterval(() => {
+                        modalSprite.idx = (modalSprite.idx + 1) % modalSprite.list.length;
+                        imgEl.src = modalSprite.list[modalSprite.idx];
+                    }, 900);
+                }
+                function stopModalAutoplay() {
+                    if (modalSprite.interval) {
+                        clearInterval(modalSprite.interval);
+                        modalSprite.interval = null;
+                        imgEl.classList.remove('sprite-playing');
                     }
-                    node.dataset.name = (name || '').toLowerCase();
-                });
-
-                function apply() {
-                    const q = state.query.trim().toLowerCase();
-                    const filtered = nodes.filter(n => n.dataset.name.includes(q));
-                    const total = filtered.length;
-                    const pageCount = Math.max(1, Math.ceil(total / state.pageSize));
-                    if (state.page >= pageCount)
-                        state.page = pageCount - 1;
-                    const start = state.page * state.pageSize;
-                    const end = start + state.pageSize;
-
-                    nodes.forEach(n => n.classList.add('hidden'));
-                    filtered.slice(start, end).forEach(n => n.classList.remove('hidden'));
-
-                    pageInfo.textContent = `Página ${state.page + 1} / ${pageCount}`;
-                    infoText.textContent = `${total} Pokémon`;
-                    prevBtn.disabled = state.page === 0;
-                    nextBtn.disabled = state.page >= pageCount - 1;
+                }
+                if (imgEl) {
+                    imgEl.addEventListener('click', () => {
+                        if (modalSprite.interval)
+                            stopModalAutoplay();
+                        else
+                            startModalAutoplay(modalSprite.list, modalSprite.idx || 0);
+                    });
                 }
 
-                searchInput.addEventListener('input', e => {
-                    state.query = e.target.value;
+                function renderCards(items) {
+                    cardsContainer.innerHTML = '';
+                    items.forEach(item => {
+                        const id = idFromUrl(item.url);
+                        const card = document.createElement('div');
+                        card.className = 'card-item';
+                        card.dataset.url = item.url;
+                        card.dataset.name = (item.name || '').toLowerCase();
+
+                        const inner = document.createElement('div');
+                        inner.className = 'poke-card';
+                        inner.setAttribute('role', 'button');
+                        inner.tabIndex = 0;
+
+                        const thumb = document.createElement('div');
+                        thumb.className = 'poke-thumb';
+                        const img = document.createElement('img');
+                        img.className = 'thumb-img';
+                        img.alt = item.name || 'sprite';
+                        img.dataset.src = id ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
+                                : 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
+                        thumb.appendChild(img);
+                        imgObserver.observe(img);
+                        setHoverAnimation(img, id);
+
+                        const meta = document.createElement('div');
+                        meta.className = 'poke-meta';
+                        meta.innerHTML = `<div><h5 style="text-transform:capitalize">${item.name}</h5><div class="sub">#<span class="poke-id">${id || '?'}</span></div></div><div class="text-end"><span class="type-badge" style="background:var(--pokedex-red)">?</span></div>`;
+
+                        inner.appendChild(thumb);
+                        inner.appendChild(meta);
+                        card.appendChild(inner);
+                        cardsContainer.appendChild(card);
+                    });
+                    infoText.textContent = `${items.length} Pokémon`;
+                    pageInfo.textContent = `Página ${state.page + 1}`;
+                    prevBtn.disabled = state.page === 0;
+                    nextBtn.disabled = items.length < state.pageSize;
+                    loadStatus.textContent = 'listo';
+                }
+
+                async function fetchPage() {
+                    loadStatus.textContent = 'cargando...';
+                    const params = new URLSearchParams({name: state.query || '', type: state.type || '', page: state.page, size: state.pageSize});
+                    try {
+                        const res = await fetch('/api/pokemons?' + params.toString());
+                        if (!res.ok)
+                            throw new Error(res.status);
+                        const data = await res.json();
+                        const items = Array.isArray(data) ? data : (data.items || []);
+                        renderCards(items);
+                    } catch (e) {
+                        console.error('API fetch error', e);
+                        cardsContainer.innerHTML = '<div class="text-danger p-3">Error cargando pokémones.</div>';
+                        loadStatus.textContent = 'error';
+                    }
+                }
+
+                const debouncedFetch = debounce(() => {
                     state.page = 0;
-                    apply();
-                });
+                    fetchPage();
+                }, 300);
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', e => {
+                        state.query = e.target.value.trim();
+                        debouncedFetch();
+                    });
+                }
+                if (typeSelect)
+                    typeSelect.addEventListener('change', e => {
+                        state.type = e.target.value;
+                        state.page = 0;
+                        fetchPage();
+                    });
                 pageSizeSelect.addEventListener('change', e => {
                     state.pageSize = parseInt(e.target.value, 10);
                     state.page = 0;
-                    apply();
+                    fetchPage();
                 });
                 prevBtn.addEventListener('click', () => {
                     if (state.page > 0) {
                         state.page--;
-                        apply();
+                        fetchPage();
                     }
                 });
                 nextBtn.addEventListener('click', () => {
                     state.page++;
-                    apply();
+                    fetchPage();
                 });
 
-                // modal: fetch details and populate enhanced UI
-                function typeColor(type) {
-                    const colors = {
-                        fire: '#EE8130', water: '#6390F0', grass: '#7AC74C', electric: '#F7D02C',
-                        ice: '#96D9D6', fighting: '#C22E28', poison: '#A33EA1', ground: '#E2BF65',
-                        flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A', rock: '#B6A136',
-                        ghost: '#735797', dragon: '#6F35FC', dark: '#705746', steel: '#B7B7CE',
-                        fairy: '#D685AD', normal: '#A8A77A'
-                    };
-                    return colors[type] || '#777';
-                }
-
-                // delegate clicks on cards
+                // card click -> detail modal
                 cardsContainer.addEventListener('click', evt => {
                     const card = evt.target.closest('.card-item');
                     if (!card)
@@ -352,74 +464,80 @@
                     statsEl.innerHTML = '';
                     abilitiesEl.innerHTML = '';
                     movesEl.textContent = '';
-                    linkEl.href = `https://pokeapi.co/api/v2/pokemon/${id}`;
+                    linkEl.href = `/api/pokemons/${id}`;
 
-                    fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
-                            .then(r => {
-                                if (!r.ok)
-                                    throw new Error(r.status);
-                                return r.json();
-                            })
-                            .then(p => {
-                                titleEl.textContent = `#${p.id} ${p.name}`;
+                    fetch(`/api/pokemons/${id}`).then(r => {
+                        if (!r.ok)
+                            throw new Error(r.status);
+                        return r.json();
+                    }).then(p => {
+                        titleEl.textContent = `#${p.id} ${p.name}`;
+                        stopModalAutoplay();
 
-                                const spriteList = [
-                                    p.sprites?.front_default,
-                                    p.sprites?.back_default,
-                                    p.sprites?.front_shiny,
-                                    p.sprites?.back_shiny,
-                                    p.sprites?.other?.['official-artwork']?.front_default
-                                ].filter(Boolean);
+                        const spriteList = [
+                            p.sprites?.other?.['official-artwork']?.front_default,
+                            p.sprites?.front_default,
+                            p.sprites?.back_default,
+                            p.sprites?.front_shiny,
+                            p.sprites?.back_shiny
+                        ].filter(Boolean);
 
-                                thumbsEl.innerHTML = '';
-                                spriteList.forEach((src, idx) => {
-                                    const t = document.createElement('div');
-                                    t.className = 'thumb' + (idx === spriteList.length - 1 ? ' selected' : '');
-                                    t.innerHTML = `<img src="${src}" alt="sprite" style="max-width:100%; max-height:100%;">`;
-                                    t.addEventListener('click', () => {
-                                        imgEl.src = src;
-                                        thumbsEl.querySelectorAll('.thumb').forEach(n => n.classList.remove('selected'));
-                                        t.classList.add('selected');
-                                    });
-                                    thumbsEl.appendChild(t);
-                                });
-
-                                const main = p.sprites?.other?.['official-artwork']?.front_default || p.sprites?.front_default || spriteList[0] || '';
-                                imgEl.src = main;
-
-                                typesEl.innerHTML = (p.types || []).map(t => `<div class="type-badge" style="background:${typeColor(t.type.name)}">${t.type.name}</div>`).join(' ');
-                                basicEl.innerHTML = `Altura: ${p.height / 10} m · Peso: ${p.weight / 10} kg · Exp base: ${p.base_experience || '-'}`;
-
-                                const MAX = 255;
-                                statsEl.innerHTML = '';
-                                (p.stats || []).forEach(s => {
-                                    const pct = Math.round((s.base_stat / MAX) * 100);
-                                    const row = document.createElement('div');
-                                    row.className = 'stat-row';
-                                    row.innerHTML = `<div class="stat-label">${s.stat.name}</div>
-                                   <div class="stat-bar"><div class="stat-fill" style="width:${pct}%; background:${typeColor(p.types[0]?.type?.name || '') || '#6c757d'}"></div></div>
-                                   <div style="width:48px;text-align:right;font-size:0.9rem"><strong>${s.base_stat}</strong></div>`;
-                                    statsEl.appendChild(row);
-                                });
-
-                                abilitiesEl.innerHTML = (p.abilities || []).map(a => `<div>${a.ability.name}${a.is_hidden ? ' (oculta)' : ''}</div>`).join('');
-                                movesEl.innerHTML = (p.moves || []).slice(0, 8).map(m => `<span class="badge bg-light text-dark me-1 mb-1">${m.move.name}</span>`).join(' ');
-                                linkEl.href = `https://pokeapi.co/api/v2/pokemon/${p.id}`;
-
-                                if (bsModal)
-                                    bsModal.show();
-                            })
-                            .catch(err => {
-                                titleEl.textContent = 'Error';
-                                basicEl.textContent = 'No se pudieron obtener los datos.';
-                                if (bsModal)
-                                    bsModal.show();
-                                console.error('poke fetch', err);
+                        thumbsEl.innerHTML = '';
+                        spriteList.forEach((src, idx) => {
+                            const t = document.createElement('div');
+                            t.className = 'thumb';
+                            t.innerHTML = `<img src="${src}" alt="sprite" style="max-width:100%;max-height:100%;">`;
+                            t.addEventListener('click', () => {
+                                stopModalAutoplay();
+                                imgEl.src = src;
+                                thumbsEl.querySelectorAll('.thumb').forEach(n => n.classList.remove('selected'));
+                                t.classList.add('selected');
+                                modalSprite.list = spriteList;
+                                modalSprite.idx = spriteList.indexOf(src);
                             });
+                            thumbsEl.appendChild(t);
+                        });
+
+                        const main = p.sprites?.other?.['official-artwork']?.front_default || p.sprites?.front_default || spriteList[0] || '';
+                        imgEl.src = main;
+                        typesEl.innerHTML = (p.types || []).map(t => `<div class="type-badge" style="background:${typeColor(t.type.name)}">${t.type.name}</div>`).join(' ');
+                        basicEl.innerHTML = `Altura: ${p.height / 10} m · Peso: ${p.weight / 10} kg · Exp base: ${p.base_experience || '-'}`;
+
+                        const MAX = 255;
+                        statsEl.innerHTML = '';
+                        (p.stats || []).forEach(s => {
+                            const pct = Math.round((s.base_stat / MAX) * 100);
+                            const row = document.createElement('div');
+                            row.className = 'stat-row';
+                            row.innerHTML = `<div class="stat-label">${s.stat.name}</div><div class="stat-bar" style="flex:1;height:10px;background:#e9ecef;border-radius:6px;overflow:hidden;"><div class="stat-fill" style="width:${pct}%;height:100%;border-radius:6px;background:${typeColor(p.types[0]?.type?.name || '') || '#6c757d'}"></div></div><div style="width:48px;text-align:right;font-size:0.9rem"><strong>${s.base_stat}</strong></div>`;
+                            statsEl.appendChild(row);
+                        });
+
+                        abilitiesEl.innerHTML = (p.abilities || []).map(a => `<div>${a.ability.name}${a.is_hidden ? ' (oculta)' : ''}</div>`).join('');
+                        movesEl.innerHTML = (p.moves || []).slice(0, 8).map(m => `<span class="badge bg-light text-dark me-1 mb-1">${m.move.name}</span>`).join(' ');
+                        linkEl.href = `https://pokeapi.co/api/v2/pokemon/${p.id}`;
+
+                        modalSprite.list = spriteList;
+                        modalSprite.idx = 0;
+                        startModalAutoplay(spriteList, 0);
+                        if (bsModal)
+                            bsModal.show();
+                    }).catch(err => {
+                        titleEl.textContent = 'Error';
+                        basicEl.textContent = 'No se pudieron obtener los datos.';
+                        if (bsModal)
+                            bsModal.show();
+                        console.error('poke fetch', err);
+                    });
                 });
 
-                // initial draw
-                apply();
+                function typeColor(type) {
+                    const colors = {fire: '#EE8130', water: '#6390F0', grass: '#7AC74C', electric: '#F7D02C', ice: '#96D9D6', fighting: '#C22E28', poison: '#A33EA1', ground: '#E2BF65', flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A', rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746', steel: '#B7B7CE', fairy: '#D685AD', normal: '#A8A77A'};
+                    return colors[type] || '#777';
+                }
+
+                // initial
+                fetchPage();
             });
         </script>
     </th:block>
