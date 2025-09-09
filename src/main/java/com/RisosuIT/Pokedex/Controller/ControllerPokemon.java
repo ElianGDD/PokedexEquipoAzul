@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
@@ -55,7 +56,7 @@ public class ControllerPokemon {
         return tiposPokemon;
     }
 
-    @GetMapping("/pokemonXNTipo")
+    @PostMapping("/pokemonXNTipo")
     public List<Pokemon> GetPokemonXNTipo(@RequestParam List<String> types) {
         GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
         List<NamedAPIResource> listaDePokemones = pokemos.getResults();
@@ -74,8 +75,8 @@ public class ControllerPokemon {
         return listaFiltradaXTipo;
     }
 
-    @GetMapping("/pokemonXNombre")
-    public List<Pokemon> GetPokemonXNombre(@RequestParam Pokemon pokemons) {
+    @PostMapping("/pokemonXNombre")
+    public String GetPokemonXNombre(@RequestParam String nombre, Model model) {
         GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
         List<NamedAPIResource> listaDePokemones = pokemos.getResults();
         List<Pokemon> listaPokemones = new ArrayList<>();
@@ -86,12 +87,35 @@ public class ControllerPokemon {
         }
 
         List<Pokemon> listaFiltradaNombre = listaPokemones.stream()
-                .filter(poke -> poke.getName().toLowerCase().contains(pokemons.getName().toLowerCase()))
+                .filter(poke -> poke.getName().toLowerCase().contains(nombre.toLowerCase()))
                 .collect(Collectors.toList());
-        return listaFiltradaNombre;
 
+        model.addAttribute("pokemons", listaFiltradaNombre);
+        return "pokemons";
     }
-   
-    
+
+    @PostMapping("/pokemonXEspecie")
+    public String GetPokemonXEspecie(@RequestParam String especie, Model model) {
+        GetAllPokemon pokemos = servicePokemon.GetAllPokemons().block();
+        List<NamedAPIResource> listaDePokemones = pokemos.getResults();
+        List<Pokemon> listaPokemones = new ArrayList<>();
+
+        for (NamedAPIResource pokemon : listaDePokemones) {
+            Pokemon descripcionPokemon = servicePokemon.getPokemonByName(pokemon.getName()).block();
+            listaPokemones.add(descripcionPokemon);
+        }
+
+        List<Pokemon> listaFiltrada = listaPokemones.stream()
+                .filter(poke -> poke.getSpecies().getName().equalsIgnoreCase(especie))
+                .collect(Collectors.toList());
+
+        model.addAttribute("pokemons", listaFiltrada);
+        return "pokemons";
+    }
+
+    @GetMapping("/pruebas")
+    public String pruebas() {
+        return "index";
+    }
 
 }
