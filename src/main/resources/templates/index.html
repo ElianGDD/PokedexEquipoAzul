@@ -12,13 +12,18 @@
                 --muted:#6b6b6b;
             }
 
-            .center-vert{
-                min-height:70vh;
-                display:flex;
-                flex-direction:column;
-                align-items:center;
-                justify-content:center;
+            .center-vert {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                margin-left: auto;
+                margin-right: auto;
+                text-align: center;
             }
+
+
 
             /* Pokéball */
             .pokeball{
@@ -126,109 +131,188 @@
                     left:140%;
                 }
             }
+
+
         </style>
+        <style>
+            .pikachu {
+                position: absolute;
+                top: -50px;
+                font-size: 32px;
+                animation: fall linear infinite;
+                pointer-events: none;
+                user-select: none;
+                z-index: 0; /* detrás del loader */
+            }
+
+            @keyframes fall {
+                0% {
+                    transform: translateY(0) rotate(0deg);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        </style>
+
     </head>
     <body>
         <div class="container py-5" layout:fragment="body">
-            <div class="center-vert">
-                <div class="pokeball" aria-hidden="true">
-                    <div class="button" aria-hidden="true"></div>
+            <div class="fullscreen-center" style="
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+                 height: 70vh;
+                 width: 80vw;
+                 margin: 0;
+                 padding: 0;
+                 text-align: center;
+                 box-sizing: border-box;
+                 ">
+                <div class="loader-content" >
+                    <div class="center-vert">
+                        <div class="pokeball" aria-hidden="true">
+                            <div class="button" aria-hidden="true"></div>
+                        </div>
+
+                        <h3 class="mb-2">Cargando Pokédex</h3>
+
+                        <div class="progress w-75" style="max-width:640px" aria-hidden="false" aria-label="Progreso de carga">
+                            <div id="bar" class="progress-bar" style="width:0%"></div>
+                        </div>
+
+                        <p id="txt" class="small-muted">0 / 0</p>
+
+                        <p id="hint" class="text-muted small">Si la carga tarda, espera o recarga la página.</p>
+                    </div>
                 </div>
-
-                <h3 class="mb-2">Cargando Pokédex</h3>
-
-                <div class="progress w-75" style="max-width:640px" aria-hidden="false" aria-label="Progreso de carga">
-                    <div id="bar" class="progress-bar" style="width:0%"></div>
-                </div>
-
-                <p id="txt" class="small-muted">0 / 0</p>
-
-                <p id="hint" class="text-muted small">Si la carga tarda, espera o recarga la página.</p>
             </div>
+
+
         </div>
 
-    <th:block layout:fragment="scripts">
-        <script>
-            (function () {
-                const bar = document.getElementById('bar');
-                const txt = document.getElementById('txt');
-                const pokeball = document.querySelector('.pokeball');
-                const hint = document.getElementById('hint');
+    </div>
 
-                // actualiza UI
-                function setProgress(loaded, total) {
-                    const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
-                    bar.style.width = pct + '%';
-                    txt.textContent = `${loaded} / ${total}`;
-                    // subtle scale on progress
-                    pokeball.style.transform = `scale(${1 + pct / 1800})`;
+<th:block layout:fragment="scripts">
+    <script>
+        // 🌩️ Lluvia de Pikachus
+        function rainPikachus(count = 15) {
+            for (let i = 0; i < count; i++) {
+                const pikachu = document.createElement('div');
+                pikachu.className = 'pikachu';
+                pikachu.innerHTML = '<img src="https://www.clipartmax.com/png/middle/129-1298390_pokeball-transparent-png-pokeball-png-pokemon-go.png" style="width: 40px; height: 40px;" />';
+
+                // Posición y duración aleatoria
+                pikachu.style.left = `${Math.random() * 100}vw`;
+                pikachu.style.animationDuration = `${2 + Math.random() * 3}s`;
+                pikachu.style.zIndex = 0; // opcional, detrás del loader
+
+                document.body.appendChild(pikachu);
+
+                // Elimina después de que termine de caer
+                setTimeout(() => {
+                    document.body.removeChild(pikachu);
+                }, 5000);
+        }
+        }
+
+        setInterval(() => rainPikachus(5), 2000);
+
+
+        setInterval(() => rainPikachus(5), 2000);
+
+        (function () {
+            const bar = document.getElementById('bar');
+            const txt = document.getElementById('txt');
+            const pokeball = document.querySelector('.pokeball');
+            const hint = document.getElementById('hint');
+
+            // actualiza UI
+            function setProgress(loaded, total) {
+                const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
+                bar.style.width = pct + '%';
+                txt.textContent = `${loaded} / ${total}`;
+                // subtle scale on progress
+                pokeball.style.transform = `scale(${1 + pct / 1800})`;
+            }
+
+            // fallback animation: simulate progress slowly
+            let fallbackInterval = null;
+            function startFallback() {
+                let simulated = 0;
+                const target = 90; // never full, wait for real finish
+                bar.classList.add('indeterminate');
+                fallbackInterval = setInterval(() => {
+                    simulated = Math.min(target, simulated + Math.floor(Math.random() * 6));
+                    bar.style.width = simulated + '%';
+                    txt.textContent = `${simulated} / ?`;
+                }, 400);
+            }
+            function stopFallback() {
+                if (fallbackInterval) {
+                    clearInterval(fallbackInterval);
+                    fallbackInterval = null;
+                }
+                bar.classList.remove('indeterminate');
+            }
+
+            // poll backend for status. Endpoint contract (recommended):
+            // GET /api/load-status -> { loaded: number, total: number, status: "building"|"done" }
+            // On "done" you may redirect to /pokemons or update UI.
+            async function pollStatus() {
+                const start = Date.now();
+
+                // ✅ Llamamos a POST /api/start-load para comenzar la carga
+                try {
+                    const res = await fetch('/api/start-load', {method: 'POST'});
+                    if (!res.ok)
+                        throw new Error('Error al iniciar la carga');
+                } catch (e) {
+                    console.error('Error al iniciar la carga', e);
+                    hint.textContent = 'No se pudo iniciar la carga. Intenta recargar.';
+                    return;
                 }
 
-                // fallback animation: simulate progress slowly
-                let fallbackInterval = null;
-                function startFallback() {
-                    let simulated = 0;
-                    const target = 90; // never full, wait for real finish
-                    bar.classList.add('indeterminate');
-                    fallbackInterval = setInterval(() => {
-                        simulated = Math.min(target, simulated + Math.floor(Math.random() * 6));
-                        bar.style.width = simulated + '%';
-                        txt.textContent = `${simulated} / ?`;
-                    }, 400);
-                }
-                function stopFallback() {
-                    if (fallbackInterval) {
-                        clearInterval(fallbackInterval);
-                        fallbackInterval = null;
-                    }
-                    bar.classList.remove('indeterminate');
-                }
+                // Luego seguimos con el polling como estaba
+                startFallback();
 
-                // poll backend for status. Endpoint contract (recommended):
-                // GET /api/load-status -> { loaded: number, total: number, status: "building"|"done" }
-                // On "done" you may redirect to /pokemons or update UI.
-                async function pollStatus() {
-                    const start = Date.now();
-                    startFallback();
-
-                    for (let attempts = 0; attempts < 120; attempts++) { // ~60s timeout
-                        try {
-                            const res = await fetch('/api/load-status', {cache: 'no-store'});
-                            if (!res.ok)
-                                throw new Error('no-status');
-                            const j = await res.json();
-                            stopFallback();
-                            const loaded = Number(j.loaded || 0);
-                            const total = Number(j.total || 0);
-                            const status = String(j.status || '').toLowerCase();
-                            setProgress(loaded, total);
-                            if (status === 'done' || (total > 0 && loaded >= total)) {
-                                // final state
-                                bar.style.width = '100%';
-                                txt.textContent = `${total} / ${total}`;
-                                pokeball.style.transform = 'scale(1.05)';
-                                // small delay so user sees 100%
-                                setTimeout(() => {
-                                    window.location.href = '/pokemons';
-                                }, 750);
-                                return;
-                            }
-                        } catch (e) {
-                            // server not available yet. continue polling.
+                for (let attempts = 0; attempts < 120; attempts++) {
+                    try {
+                        const res = await fetch('/api/load-status', {cache: 'no-store'});
+                        if (!res.ok)
+                            throw new Error('no-status');
+                        const j = await res.json();
+                        stopFallback();
+                        const loaded = Number(j.loaded || 0);
+                        const total = Number(j.total || 0);
+                        const status = String(j.status || '').toLowerCase();
+                        setProgress(loaded, total);
+                        if (status === 'done' || (total > 0 && loaded >= total)) {
+                            bar.style.width = '100%';
+                            txt.textContent = `${total} / ${total}`;
+                            pokeball.style.transform = 'scale(1.05)';
+                            setTimeout(() => {
+                                window.location.href = '/pokemons';
+                            }, 750);
+                            return;
                         }
-                        // backoff: faster at start, then slower
-                        await new Promise(r => setTimeout(r, attempts < 8 ? 500 : 1000));
+                    } catch (e) {
+                        // polling fallback
                     }
-
-                    // timeout: show message and let user navigate
-                    stopFallback();
-                    hint.textContent = 'Tiempo de espera agotado. Intenta recargar o visita /pokemons.';
+                    await new Promise(r => setTimeout(r, attempts < 8 ? 500 : 1000));
                 }
 
-                // kick off
-                pollStatus();
-            })();
-        </script>
-    </th:block>
+                stopFallback();
+                hint.textContent = 'Tiempo de espera agotado. Intenta recargar o visita /pokemons.';
+            }
+
+
+            // kick off
+            pollStatus();
+        })();
+    </script>
+</th:block>
 </body>
 </html>
