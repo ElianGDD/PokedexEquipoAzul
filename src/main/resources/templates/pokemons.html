@@ -1,0 +1,975 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Pokédex — Listado</title>
+
+        <!-- Bootstrap + icons -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+        <style>
+            :root{
+                --pokedex-red:#d32f2f;
+                --pokedex-dark:#7b0f0f;
+                --muted:#6b6b6b;
+                --card-radius:12px;
+                --gap:16px;
+                --glass: rgba(255,255,255,0.86);
+            }
+            *{
+                box-sizing:border-box
+            }
+            html, body {
+                height: 100%;
+                margin: 0;
+                font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+                color: #222;
+                background-image: url('https://cdn.wallpapersafari.com/97/82/YT8zH1.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed; /* <- Esto hace que el fondo sea estático */
+            }
+
+            .container-shell{
+                max-width:1200px;
+                margin:20px auto;
+                padding:18px
+            }
+
+            /* Controls */
+            .controls{
+                display:flex;
+                gap:12px;
+                align-items:center;
+                margin-bottom:18px;
+                flex-wrap:wrap
+            }
+            .chip{
+                display:inline-block;
+                padding:6px 10px;
+                background:#f1f1f1;
+                border-radius:999px;
+                margin-right:6px;
+                font-size:.85rem
+            }
+
+            /* Grid */
+            .card-grid{
+                display:grid;
+                grid-template-columns:repeat(4,1fr);
+                gap:var(--gap)
+            }
+            @media(max-width:991px){
+                .card-grid{
+                    grid-template-columns:repeat(2,1fr)
+                }
+            }
+            @media(max-width:575px){
+                .card-grid{
+                    grid-template-columns:1fr
+                }
+            }
+
+            .card-item{
+                display:flex
+            }
+            .poke-card{
+                width:100%;
+                border-radius:var(--card-radius);
+                background:linear-gradient(#fff,#f8f8f8);
+                box-shadow:0 12px 36px rgba(15,15,15,0.06);
+                overflow:hidden;
+                display:flex;
+                flex-direction:column;
+                cursor:pointer;
+                transition:transform .18s ease,box-shadow .18s ease;
+                border:1px solid rgba(0,0,0,0.04)
+            }
+            .poke-card:hover,.poke-card:focus{
+                transform:translateY(-6px);
+                box-shadow:0 22px 56px rgba(15,15,15,0.12);
+                outline:none
+            }
+
+            .poke-thumb{
+                height:160px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                background:linear-gradient(180deg,#fbfbfb,#f3f3f5)
+            }
+            .poke-thumb img{
+                max-width:100%;
+                max-height:100%;
+                object-fit:contain;
+                filter:drop-shadow(0 8px 20px rgba(0,0,0,0.06));
+                transition:transform .18s,filter .18s,opacity .18s
+            }
+
+            .poke-meta{
+                padding:12px;
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:8px
+            }
+            .poke-meta h5{
+                margin:0;
+                text-transform:capitalize;
+                color:var(--pokedex-dark);
+                font-size:1rem
+            }
+            .sub{
+                font-size:.85rem;
+                color:var(--muted)
+            }
+            .type-badge{
+                padding:6px 10px;
+                border-radius:999px;
+                color:#fff;
+                font-size:.75rem;
+                text-transform:capitalize;
+                display:inline-block;
+                margin-left:6px
+            }
+
+            /* skeleton */
+            .skeleton{
+                background: linear-gradient(90deg,#eeeeee 25%, #f6f6f6 37%, #eeeeee 63%);
+                background-size: 400% 100%;
+                animation: shimmer 1.2s linear infinite;
+                border-radius:8px
+            }
+            @keyframes shimmer{
+                0%{
+                    background-position:200% 0
+                }
+                100%{
+                    background-position:-200% 0
+                }
+            }
+
+            /* modal header gradient */
+            #pokeModalHeader{
+                transition:background .25s ease,color .25s ease
+            }
+
+            /* loader overlay */
+            #loaderOverlay{
+                position:fixed;
+                inset:0;
+                background:var(--glass);
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                z-index:1200;
+                backdrop-filter:blur(3px);
+                padding:20px
+            }
+            .loader-card{
+                width:min(520px,96%);
+                padding:18px;
+                border-radius:12px;
+                background:#fff;
+                box-shadow:0 18px 48px rgba(0,0,0,0.08);
+                text-align:center
+            }
+
+            .stat-row{
+                display:flex;
+                gap:8px;
+                align-items:center;
+                margin-bottom:8px
+            }
+            .stat-label{
+                min-width:110px;
+                text-transform:capitalize;
+                font-size:.9rem;
+                color:var(--muted)
+            }
+            .stat-bar{
+                flex:1;
+                height:10px;
+                background:#e9ecef;
+                border-radius:6px;
+                overflow:hidden
+            }
+            .stat-fill{
+                height:100%;
+                border-radius:6px
+            }
+
+            /* responsive tweaks */
+            @media(max-width:720px){
+                .controls .muted{
+                    display:none
+                }
+            }
+            .poke-thumb {
+                background: rgba(255, 255, 255, 0.6); /* Blanco translúcido */
+                border-radius: 12px;
+                padding: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* Sombra sutil */
+                backdrop-filter: blur(2px); /* Opcional: efecto glass suave */
+            }
+
+            .poke-thumb .thumb-img {
+                max-width: 100%;
+                height: auto;
+                object-fit: contain;
+                filter: none; /* Asegura que no se modifique la imagen */
+            }
+
+        </style>
+    </head>
+    <body layout:fragment="body">
+        <div class="container-shell">
+
+            <nav class="navbar navbar-expand-lg shadow-sm rounded mb-3 px-3 py-2 sticky-top"
+                 style="background-color: rgba(255, 0, 0, 0.85); border-radius: 0.75rem; z-index: 1030;">
+                <div class="container-fluid flex-wrap">
+
+                    <!-- Título y subtítulo -->
+                    <div class="d-flex flex-column me-auto text-white">
+                        <h1 class="h4 mb-0 fw-bold">
+                            Pokédex <small class="text-light fw-semibold">/ listado</small>
+                        </h1>
+                        <div class="small text-light">Buscar y filtrar — se mostrará una pantalla de carga solo la primera vez</div>
+                    </div>
+
+                    <!-- Total info -->
+                    <div class="text-end text-light ms-auto me-3 d-none d-md-block">
+                        <div id="totalInfo">—</div>
+                    </div>
+
+                    <!-- Controles -->
+                    <form class="d-flex flex-wrap align-items-center gap-2 mt-3 mt-lg-0 w-100">
+                        <!-- Buscador -->
+                        <label>Buscar nombre</label>
+                        <div class="input-group" style="min-width: 250px; max-width: 300px;">
+                            <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
+                            <input id="searchInput" class="form-control form-control-sm" placeholder="Buscar por nombre..." aria-label="Buscar pokémon">
+                        </div>
+
+                        <!-- Filtros -->
+                        <label>Filtro por tipo</label>
+                        <select id="typeSelect" class="form-select form-select-sm" style="width:160px" aria-label="Filtro por tipo">
+                            <option value="">Todos los tipos</option>
+                            <option th:each="t : ${types}" th:value="${t.name}" th:text="${t.name}"></option>
+                        </select>
+
+                        <label>Filtro por distintos tipos</label>
+                        <select id="typesMulti" class="form-select form-select-sm" multiple size="1" style="width:220px" aria-label="Filtro múltiple">
+                            <option th:each="t : ${types}" th:value="${t.name}" th:text="${t.name}"></option>
+                        </select>
+
+                        <!-- Página -->
+                        <label>Paginación</label>
+                        <select id="pageSize" class="form-select form-select-sm" style="width:120px" aria-label="Tamaño de página">
+                            <option value="8">8 / pág</option>
+                            <option value="12" selected>12 / pág</option>
+                            <option value="24">24 / pág</option>
+                        </select>
+
+                        <!-- Navegación -->
+                        <div class="ms-auto d-flex gap-2 align-items-center">
+                            <div id="activeTypes" aria-hidden="true" class="text-dark small"></div>
+                            <button id="prevBtn" class="btn btn-sm btn-outline-light" aria-label="Anterior">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button id="nextBtn" class="btn btn-sm btn-outline-light" aria-label="Siguiente">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </nav>
+
+
+
+            <!-- CONTENEDOR DE LAS CARTAS -->
+            <div class="shadow-sm rounded p-3 mb-4" style="background-color: rgba(0, 0, 0, 0.7);
+;">
+
+                <!-- Cards -->
+                <div id="cards" class="card-grid" aria-live="polite" aria-busy="false">
+                    <div th:each="pokemon : ${pokemons}" class="card-item" th:attr="data-url=${pokemon.url},data-name=${pokemon.name}">
+                        <div class="poke-card" role="button" tabindex="0">
+                            <div class="poke-thumb">
+                                <img data-src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" alt="sprite" class="thumb-img">
+                            </div>
+                            <div class="poke-meta">
+                                <div>
+                                    <h5 th:text="${pokemon.name}">nombre</h5>
+                                    <div class="sub">#<span class="poke-id">?</span></div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="type-badge" style="background:var(--pokedex-red)">?</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- pagination/status -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div id="pageInfo" class="text-muted small">Página 1</div>
+                    <div class="text-muted small">Carga: <span id="loadStatus">listo</span></div>
+                </div>
+            </div>
+
+
+            <!-- modal detail -->
+            <div class="modal fade" id="pokeModal" tabindex="-1" aria-hidden="true" aria-labelledby="pokeModalTitle">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div id="pokeModalHeader" class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="pokeModalTitle">Pokémon</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="d-flex gap-3 flex-column flex-lg-row">
+                                <div class="d-flex flex-column align-items-center" style="min-width:88px;">
+                                    <div id="pokeThumbs" class="d-flex flex-column gap-2"></div>
+                                </div>
+
+                                <div class="text-center flex-shrink-0" style="min-width:280px; max-width:380px;">
+                                    <div class="border rounded bg-white p-3" style="height:360px; display:flex; align-items:center; justify-content:center;">
+                                        <img id="pokeModalImg" src="" alt="" style="max-width:100%; max-height:100%; object-fit:contain;">
+                                    </div>
+                                    <div id="pokeModalTypes" class="mt-2 d-flex justify-content-center gap-2"></div>
+                                    <div id="pokeModalBasic" class="mt-2 text-muted small"></div>
+                                </div>
+
+                                <div class="flex-fill">
+                                    <h6 class="mb-2">Stats</h6>
+                                    <div id="pokeModalStats" class="mb-3"></div>
+                                    <h6 class="mb-2">Habilidades</h6>
+                                    <div id="pokeModalAbilities" class="mb-2"></div>
+                                    <h6 class="mb-2">Movimientos (top)</h6>
+                                    <div id="pokeModalMoves" class="mb-2 small text-muted"></div>
+                                    <div class="mt-3"><a id="pokeModalLink" class="btn btn-sm btn-outline-danger" target="_blank" rel="noopener">Abrir en PokéAPI</a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- loader overlay (first-run) -->
+            <div id="loaderOverlay" style="display:none" aria-hidden="true">
+                <div class="loader-card" role="status" aria-live="polite">
+                    <h5 style="color:var(--pokedex-red);margin-bottom:6px">Inicializando Pokédex</h5>
+                    <p class="text-muted small mb-2" id="bootMessage">Cargando datos…</p>
+
+                    <div class="progress mb-3" style="height:12px;border-radius:8px">
+                        <div id="bootProgress" class="progress-bar" role="progressbar" style="width:0%">0%</div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button id="forceReload" class="btn btn-sm btn-outline-secondary">Forzar recarga</button>
+                        <button id="skipCache" class="btn btn-sm btn-outline-danger">Continuar sin cache</button>
+                    </div>
+
+                    <p id="bootHint" class="text-muted small mt-3">Si la carga falla, intenta forzarla o continuar con la vista paginada.</p>
+                </div>
+            </div>
+
+            <!-- scripts -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+                (function () {
+                    'use strict';
+
+                    // DOM refs
+                    const cardsContainer = document.getElementById('cards');
+                    const searchInput = document.getElementById('searchInput');
+                    const typeSelect = document.getElementById('typeSelect');
+                    const typesMulti = document.getElementById('typesMulti');
+                    const activeTypes = document.getElementById('activeTypes');
+                    const pageSizeSelect = document.getElementById('pageSize');
+                    const prevBtn = document.getElementById('prevBtn');
+                    const nextBtn = document.getElementById('nextBtn');
+                    const pageInfo = document.getElementById('pageInfo');
+                    const infoText = document.getElementById('totalInfo');
+                    const loadStatus = document.getElementById('loadStatus');
+
+                    const modalEl = document.getElementById('pokeModal');
+                    const bsModal = (window.bootstrap && modalEl) ? new bootstrap.Modal(modalEl) : null;
+                    const titleEl = document.getElementById('pokeModalTitle');
+                    const imgEl = document.getElementById('pokeModalImg');
+                    const thumbsEl = document.getElementById('pokeThumbs');
+                    const typesEl = document.getElementById('pokeModalTypes');
+                    const basicEl = document.getElementById('pokeModalBasic');
+                    const statsEl = document.getElementById('pokeModalStats');
+                    const abilitiesEl = document.getElementById('pokeModalAbilities');
+                    const movesEl = document.getElementById('pokeModalMoves');
+                    const linkEl = document.getElementById('pokeModalLink');
+
+                    const loaderOverlay = document.getElementById('loaderOverlay');
+                    const bootProgress = document.getElementById('bootProgress');
+                    const bootMessage = document.getElementById('bootMessage');
+                    const forceReloadBtn = document.getElementById('forceReload');
+                    const skipCacheBtn = document.getElementById('skipCache');
+                    const bootHint = document.getElementById('bootHint');
+
+                    // state & constants
+                    let state = {query: '', type: '', page: 0, pageSize: parseInt(pageSizeSelect.value || '12', 10), multi: false};
+                    const ID_RE = /\/(\d+)\/?$/;
+                    const CACHE_KEY = 'pokedex_cache_v1';
+                    const CACHE_TTL = 1000 * 60 * 60 * 24; // 24h
+                    const MAX_BOOT_PAGES = 80; // safety limit for iterative fetch
+                    const CONCURRENCY = 6;
+
+                    function idFromUrl(url) {
+                        if (!url)
+                            return null;
+                        const m = url.match(ID_RE);
+                        return m ? m[1] : null;
+                    }
+                    function debounce(fn, ms) {
+                        let t;
+                        return (...a) => {
+                            clearTimeout(t);
+                            t = setTimeout(() => fn(...a), ms);
+                        };
+                    }
+
+                    // cache helpers
+                    function readCache() {
+                        try {
+                            return JSON.parse(localStorage.getItem(CACHE_KEY));
+                        } catch (e) {
+                            return null;
+                        }
+                    }
+                    function saveCache(items) {
+                        try {
+                            localStorage.setItem(CACHE_KEY, JSON.stringify({ts: Date.now(), items}));
+                        } catch (e) {
+                            console.warn('saveCache err', e);
+                        }
+                    }
+                    function invalidateCache() {
+                        try {
+                            localStorage.removeItem(CACHE_KEY);
+                        } catch (e) {
+                        }
+                    }
+                    function cacheValid(c) {
+                        return c && c.ts && (Date.now() - c.ts) < CACHE_TTL && Array.isArray(c.items) && c.items.length > 0;
+                    }
+
+                    // lazy image loader
+                    const imgObserver = new IntersectionObserver((entries, obs) => {
+                        entries.forEach(e => {
+                            if (e.isIntersecting) {
+                                const img = e.target;
+                                const src = img.dataset.src;
+                                if (src)
+                                    img.src = src;
+                                obs.unobserve(img);
+                            }
+                        });
+                    }, {root: null, rootMargin: '300px', threshold: 0.1});
+
+                    // type color map
+                    function typeColor(type) {
+                        const colors = {fire: '#EE8130', water: '#6390F0', grass: '#7AC74C', electric: '#F7D02C', ice: '#96D9D6', fighting: '#C22E28', poison: '#A33EA1', ground: '#E2BF65', flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A', rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746', steel: '#B7B7CE', fairy: '#D685AD', normal: '#A8A77A'};
+                        return colors[type] || '#777';
+                    }
+
+                    function applyTypeColors(element, types) {
+                        if (!element)
+                            return;
+                        if (!types || types.length === 0) {
+                            element.style.background = '';
+                            element.style.color = '';
+                            return;
+                        }
+                        const c1 = typeColor(types[0]) || '#ddd';
+                        const c2 = types[1] ? typeColor(types[1]) : c1;
+                        element.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+                        element.style.color = '#fff';
+                    }
+
+                    // concurrency-limited fetch helper
+                    async function fetchWithConcurrency(urls, parallel = CONCURRENCY) {
+                        const results = new Array(urls.length);
+                        let i = 0;
+                        async function worker() {
+                            while (true) {
+                                const idx = i++;
+                                if (idx >= urls.length)
+                                    break;
+                                try {
+                                    const res = await fetch(urls[idx]);
+                                    results[idx] = res.ok ? await res.json() : null;
+                                } catch (e) {
+                                    results[idx] = null;
+                                }
+                            }
+                        }
+                        await Promise.all(Array.from({length: Math.min(parallel, urls.length)}, worker));
+                        return results;
+                    }
+
+                    // hover animation for sprite gifs (gen-V)
+                    function setHoverAnimation(img, id) {
+                        if (!img || !id)
+                            return;
+                        const anim = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;
+                        img.addEventListener('mouseenter', () => {
+                            if (!img._staticSrc)
+                                img._staticSrc = img.src || img.dataset.src || '';
+                            img.src = anim;
+                            img.classList.add('sprite-animated');
+                        });
+                        img.addEventListener('mouseleave', () => {
+                            if (img._staticSrc !== undefined) {
+                                img.src = img._staticSrc;
+                                img._staticSrc = undefined;
+                            }
+                            img.classList.remove('sprite-animated');
+                        });
+                    }
+
+                    // render skeleton placeholders
+                    function renderSkeletons(count = 8) {
+                        cardsContainer.innerHTML = '';
+                        for (let i = 0; i < count; i++) {
+                            const wrapper = document.createElement('div');
+                            wrapper.className = 'card-item';
+                            wrapper.innerHTML = `<div class="poke-card" aria-hidden="true">
+                        <div class="poke-thumb skeleton"></div>
+                        <div class="poke-meta" style="padding:12px;">
+                          <div style="flex:1">
+                            <div class="skeleton" style="height:14px;width:50%;margin-bottom:8px;border-radius:6px"></div>
+                            <div class="skeleton" style="height:12px;width:30%;border-radius:6px"></div>
+                          </div>
+                          <div style="width:70px"><div class="skeleton" style="height:28px;width:70px;border-radius:999px"></div></div>
+                        </div>
+                      </div>`;
+                            cardsContainer.appendChild(wrapper);
+                    }
+                    }
+
+                    // render basic cards quickly (metadata only)
+                    function renderCards(items) {
+                        cardsContainer.innerHTML = '';
+                        if (!Array.isArray(items) || items.length === 0) {
+                            cardsContainer.innerHTML = '<div class="p-3 text-muted">No hay pokémones</div>';
+                            infoText.textContent = '0 Pokémon';
+                            return;
+                        }
+
+                        items.forEach(item => {
+                            const id = idFromUrl(item.url);
+                            const card = document.createElement('div');
+                            card.className = 'card-item';
+                            card.dataset.url = item.url;
+                            card.dataset.name = (item.name || '').toLowerCase();
+
+                            const inner = document.createElement('div');
+                            inner.className = 'poke-card';
+                            inner.tabIndex = 0;
+                            inner.setAttribute('role', 'button');
+
+                            const thumb = document.createElement('div');
+                            thumb.className = 'poke-thumb';
+                            const img = document.createElement('img');
+                            img.className = 'thumb-img';
+                            img.alt = item.name || 'sprite';
+                            img.dataset.src = id ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png` : 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
+                            thumb.appendChild(img);
+                            imgObserver.observe(img);
+                            setHoverAnimation(img, id);
+
+                            const meta = document.createElement('div');
+                            meta.className = 'poke-meta';
+                            meta.innerHTML = `<div><h5 style="text-transform:capitalize">${item.name}</h5><div class="sub">#<span class="poke-id">${id || '?'}</span></div></div><div class="text-end"><span class="type-badge" style="background:var(--pokedex-red)">?</span></div>`;
+
+                            inner.appendChild(thumb);
+                            inner.appendChild(meta);
+                            card.appendChild(inner);
+                            cardsContainer.appendChild(card);
+                        });
+
+                        infoText.textContent = `${items.length} Pokémon`;
+                        pageInfo.textContent = state.multi ? `Filtro: ${Array.from((typesMulti.selectedOptions || [])).map(o => o.value).join(', ')}` : `Página ${state.page + 1}`;
+                        prevBtn.disabled = state.multi || state.page === 0;
+                        nextBtn.disabled = state.multi;
+
+                        // enrich types in background to avoid N+1 UI freeze
+                        enrichCardsWithTypes(items).catch(err => console.warn('enrich error', err));
+                    }
+
+                    // fetch details in limited concurrency and apply colors/badges
+                    async function enrichCardsWithTypes(items) {
+                        if (!items || items.length === 0)
+                            return;
+                        const urls = items.map(it => it.url);
+                        const details = await fetchWithConcurrency(urls, CONCURRENCY);
+                        details.forEach((d, i) => {
+                            if (!d)
+                                return;
+                            const card = cardsContainer.querySelector(`.card-item[data-url="${items[i].url}"]`);
+                            if (!card)
+                                return;
+                            const inner = card.querySelector('.poke-card');
+                            const types = (d.types || []).map(t => t.type.name);
+                            applyTypeColors(inner, types);
+                            const badge = inner.querySelector('.type-badge');
+                            if (badge) {
+                                badge.textContent = types.join(' / ');
+                                badge.style.background = typeColor(types[0]) || '#777';
+                            }
+                        });
+                    }
+
+                    // modal sprite autoplay
+                    const modalSprite = {interval: null, list: [], idx: 0};
+                    function startModalAutoplay(list, initial = 0) {
+                        stopModalAutoplay();
+                        if (!Array.isArray(list) || list.length === 0)
+                            return;
+                        modalSprite.list = list;
+                        modalSprite.idx = initial % list.length;
+                        imgEl.src = list[modalSprite.idx];
+                        imgEl.classList.add('sprite-playing');
+                        modalSprite.interval = setInterval(() => {
+                            modalSprite.idx = (modalSprite.idx + 1) % modalSprite.list.length;
+                            imgEl.src = modalSprite.list[modalSprite.idx];
+                        }, 900);
+                    }
+                    function stopModalAutoplay() {
+                        if (modalSprite.interval) {
+                            clearInterval(modalSprite.interval);
+                            modalSprite.interval = null;
+                            imgEl.classList.remove('sprite-playing');
+                        }
+                    }
+                    if (imgEl)
+                        imgEl.addEventListener('click', () => modalSprite.interval ? stopModalAutoplay() : startModalAutoplay(modalSprite.list, modalSprite.idx || 0));
+
+                    // click card -> load detail
+                    cardsContainer.addEventListener('click', evt => {
+                        const card = evt.target.closest('.card-item');
+                        if (!card)
+                            return;
+                        const url = card.dataset.url;
+                        const id = idFromUrl(url);
+                        if (!id)
+                            return;
+
+                        titleEl.textContent = 'Cargando...';
+                        imgEl.src = '';
+                        thumbsEl.innerHTML = '';
+                        typesEl.innerHTML = '';
+                        basicEl.textContent = '';
+                        statsEl.innerHTML = '';
+                        abilitiesEl.innerHTML = '';
+                        movesEl.textContent = '';
+                        linkEl.href = `/api/pokemons/${id}`;
+
+                        fetch(`/api/pokemons/${id}`).then(r => {
+                            if (!r.ok)
+                                throw new Error(r.status);
+                            return r.json();
+                        }).then(p => {
+                            titleEl.textContent = `#${p.id} ${p.name}`;
+                            stopModalAutoplay();
+
+                            const spriteList = [
+                                p.sprites?.other?.['official-artwork']?.front_default,
+                                p.sprites?.front_default,
+                                p.sprites?.back_default,
+                                p.sprites?.front_shiny,
+                                p.sprites?.back_shiny
+                            ].filter(Boolean);
+
+                            thumbsEl.innerHTML = '';
+                            spriteList.forEach((src) => {
+                                const t = document.createElement('div');
+                                t.className = 'thumb';
+                                t.innerHTML = `<img src="${src}" alt="sprite" style="max-width:100%;max-height:100%;">`;
+                                t.addEventListener('click', () => {
+                                    stopModalAutoplay();
+                                    imgEl.src = src;
+                                    thumbsEl.querySelectorAll('.thumb').forEach(n => n.classList.remove('selected'));
+                                    t.classList.add('selected');
+                                    modalSprite.list = spriteList;
+                                    modalSprite.idx = spriteList.indexOf(src);
+                                });
+                                thumbsEl.appendChild(t);
+                            });
+
+                            const main = p.sprites?.other?.['official-artwork']?.front_default || p.sprites?.front_default || spriteList[0] || '';
+                            imgEl.src = main;
+
+                            const types = (p.types || []).map(t => t.type.name);
+                            applyTypeColors(document.getElementById('pokeModalHeader'), types);
+                            typesEl.innerHTML = types.map(type => `<div class="type-badge" style="background:${typeColor(type)}">${type}</div>`).join(' ');
+
+                            basicEl.innerHTML = `Altura: ${p.height / 10} m · Peso: ${p.weight / 10} kg · Exp base: ${p.base_experience || '-'}`;
+
+                            const MAX = 255;
+                            statsEl.innerHTML = '';
+                            (p.stats || []).forEach(s => {
+                                const pct = Math.round((s.base_stat / MAX) * 100);
+                                const row = document.createElement('div');
+                                row.className = 'stat-row';
+                                row.innerHTML = `<div class="stat-label">${s.stat.name}</div><div class="stat-bar"><div class="stat-fill" style="width:${pct}%;background:${typeColor(p.types[0]?.type?.name || '') || '#6c757d'}"></div></div><div style="width:48px;text-align:right"><strong>${s.base_stat}</strong></div>`;
+                                statsEl.appendChild(row);
+                            });
+
+                            abilitiesEl.innerHTML = (p.abilities || []).map(a => `<div>${a.ability.name}${a.is_hidden ? ' (oculta)' : ''}</div>`).join('');
+                            movesEl.innerHTML = (p.moves || []).slice(0, 8).map(m => `<span class="badge bg-light text-dark me-1 mb-1">${m.move.name}</span>`).join(' ');
+                            linkEl.href = `https://pokeapi.co/api/v2/pokemon/${p.id}`;
+
+                            modalSprite.list = spriteList;
+                            modalSprite.idx = 0;
+                            startModalAutoplay(spriteList, 0);
+                            if (bsModal)
+                                bsModal.show();
+                        }).catch(err => {
+                            titleEl.textContent = 'Error';
+                            basicEl.textContent = 'No se pudieron obtener los datos.';
+                            if (bsModal)
+                                bsModal.show();
+                            console.error('poke fetch', err);
+                        });
+                    });
+
+                    // fetch helpers (paged / by-types)
+                    async function fetchPage() {
+                        loadStatus.textContent = 'cargando...';
+                        renderSkeletons(Math.min(8, state.pageSize));
+                        const selected = Array.from(typesMulti ? typesMulti.selectedOptions : []).map(o => o.value).filter(Boolean);
+                        try {
+                            let items = [];
+                            if (selected.length >= 2) {
+                                state.multi = true;
+                                const params = new URLSearchParams();
+                                selected.forEach(t => params.append('types', t));
+                                const res = await fetch('/api/pokemons/by-types?' + params.toString());
+                                if (!res.ok)
+                                    throw new Error(res.status);
+                                items = await res.json();
+                            } else {
+                                state.multi = false;
+                                const params = new URLSearchParams({name: state.query || '', type: selected[0] || state.type || '', page: state.page, size: state.pageSize});
+                                const res = await fetch('/api/pokemons?' + params.toString());
+                                if (!res.ok)
+                                    throw new Error(res.status);
+                                const data = await res.json();
+                                items = Array.isArray(data) ? data : (data.items || []);
+                            }
+                            renderCards(items);
+                            loadStatus.textContent = 'listo';
+                        } catch (e) {
+                            console.error('API fetch error', e);
+                            cardsContainer.innerHTML = '<div class="p-3 text-danger">Error cargando pokémones.</div>';
+                            loadStatus.textContent = 'error';
+                        }
+                    }
+
+                    const debouncedFetch = debounce(() => {
+                        state.page = 0;
+                        fetchPage();
+                    }, 300);
+
+                    // controls wiring
+                    if (searchInput)
+                        searchInput.addEventListener('input', e => {
+                            state.query = e.target.value.trim();
+                            debouncedFetch();
+                        });
+                    if (typeSelect)
+                        typeSelect.addEventListener('change', e => {
+                            state.type = e.target.value;
+                            if (typesMulti)
+                                Array.from(typesMulti.options).forEach(opt => opt.selected = false);
+                            state.page = 0;
+                            fetchPage();
+                        });
+                    if (typesMulti) {
+                        typesMulti.addEventListener('change', e => {
+                            const selected = Array.from(typesMulti.selectedOptions).map(o => o.value);
+                            if (selected.length <= 1) {
+                                state.type = selected[0] || '';
+                                state.page = 0;
+                                fetchPage();
+                            } else {
+                                state.page = 0;
+                                fetchPage();
+                            }
+                            activeTypes.innerHTML = selected.map(s => `<span class="chip">${s}</span>`).join('');
+                        });
+                        typesMulti.addEventListener('focus', () => typesMulti.size = Math.min(8, typesMulti.options.length || 4));
+                        typesMulti.addEventListener('blur', () => typesMulti.size = 1);
+                    }
+                    pageSizeSelect.addEventListener('change', e => {
+                        state.pageSize = parseInt(e.target.value, 10);
+                        state.page = 0;
+                        fetchPage();
+                    });
+                    prevBtn.addEventListener('click', () => {
+                        if (state.page > 0) {
+                            state.page--;
+                            fetchPage();
+                        }
+                    });
+                    nextBtn.addEventListener('click', () => {
+                        state.page++;
+                        fetchPage();
+                    });
+
+                    // ---------- bootOnce: show overlay only if no valid cache ----------
+                    // Strategy:
+                    // 1) If cache valid -> render cache and return.
+                    // 2) Try /api/pokemons?size=10000 (server full dump). If OK -> save & render.
+                    // 3) If server returns 202 or provides /api/load-status -> poll load-status for progress (useful if backend builds index).
+                    // 4) Fallback: iterative paged fetch until small set or MAX_BOOT_PAGES.
+                    async function pollLoadStatus(timeoutMs = 60000, intervalMs = 800) {
+                        // contract: GET /api/load-status -> { loaded:number, total:number, status: "building"|"done" }
+                        const start = Date.now();
+                        while (Date.now() - start < timeoutMs) {
+                            try {
+                                const res = await fetch('/api/load-status', {cache: 'no-store'});
+                                if (!res.ok)
+                                    throw new Error(res.status);
+                                const json = await res.json();
+                                const loaded = Number(json.loaded || 0);
+                                const total = Number(json.total || 0);
+                                const status = String(json.status || '').toLowerCase();
+                                const pct = total > 0 ? Math.round((loaded / total) * 100) : Math.min(95, Math.round(loaded / 1000 * 100));
+                                bootProgress.style.width = `${Math.max(6, Math.min(96, pct))}%`;
+                                bootProgress.textContent = `${Math.max(1, pct)}%`;
+                                bootMessage.textContent = `Indexando datos — ${loaded} / ${total || '?'} `;
+                                if (status === 'done' || (total > 0 && loaded >= total))
+                                    return true;
+                            } catch (e) {
+                                // ignore and retry
+                            }
+                            await new Promise(r => setTimeout(r, intervalMs));
+                        }
+                        return false;
+                    }
+
+                    async function bootOnce( { force = false } = {}) {
+                        const cached = readCache();
+                        if (!force && cacheValid(cached)) {
+                            renderCards(cached.items);
+                            return;
+                        }
+
+                        // show loader overlay
+                        loaderOverlay.style.display = 'flex';
+                        bootProgress.style.width = '6%';
+                        bootProgress.textContent = '6%';
+                        bootMessage.textContent = 'Solicitando catálogo al servidor…';
+
+                        // try full dump
+                        try {
+                            let bigRes = await fetch('/api/pokemons?size=10000', {cache: 'no-store'});
+                            if (bigRes.status === 202) {
+                                // server building index — try polling load-status
+                                bootMessage.textContent = 'Servidor indexando, mostrando progreso…';
+                                const ok = await pollLoadStatus(60000, 800);
+                                if (ok) {
+                                    // try again to fetch full dump
+                                    bigRes = await fetch('/api/pokemons?size=10000', {cache: 'no-store'});
+                                }
+                            }
+
+                            if (bigRes.ok) {
+                                const data = await bigRes.json();
+                                const items = Array.isArray(data) ? data : (data.items || []);
+                                if (items.length > 0) {
+                                    saveCache(items);
+                                    bootProgress.style.width = '96%';
+                                    bootProgress.textContent = '96%';
+                                    // UX small delay
+                                    setTimeout(() => {
+                                        renderCards(items);
+                                        bootProgress.style.width = '100%';
+                                        bootProgress.textContent = '100%';
+                                        setTimeout(() => loaderOverlay.style.display = 'none', 200);
+                                    }, 200);
+                                    return;
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('full dump attempt failed', err);
+                        }
+
+                        // iterative paged fetch fallback
+                        bootMessage.textContent = 'Descargando por páginas (fallback)…';
+                        const perPage = 200;
+                        let all = [], page = 0;
+                        try {
+                            for (; page < MAX_BOOT_PAGES; page++) {
+                                const res = await fetch(`/api/pokemons?name=&type=&page=${page}&size=${perPage}`, {cache: 'no-store'});
+                                if (!res.ok)
+                                    break;
+                                const d = await res.json();
+                                const items = Array.isArray(d) ? d : (d.items || []);
+                                all = all.concat(items);
+                                // update progress optimism
+                                bootProgress.style.width = `${Math.min(92, Math.round((all.length / ((perPage) * Math.min(MAX_BOOT_PAGES, page + 1))) * 92))}%`;
+                                bootProgress.textContent = `${Math.min(92, Math.round((all.length / ((perPage) * Math.min(MAX_BOOT_PAGES, page + 1))) * 92))}%`;
+                                if (items.length < perPage)
+                                    break; // end
+                                // small pause to be polite
+                                await new Promise(r => setTimeout(r, 120));
+                            }
+
+                            if (all.length > 0) {
+                                saveCache(all);
+                                renderCards(all);
+                                bootProgress.style.width = '100%';
+                                bootProgress.textContent = '100%';
+                                setTimeout(() => loaderOverlay.style.display = 'none', 180);
+                                return;
+                            }
+                        } catch (err) {
+                            console.warn('iterative fetch failed', err);
+                        }
+
+                        // if we got here -> fallback to paged UI and hide overlay
+                        bootHint.textContent = 'No se pudo precargar todo el catálogo. La lista se mostrará paginada.';
+                        loaderOverlay.style.display = 'none';
+                        fetchPage();
+                    }
+
+                    // loader actions
+                    if (forceReloadBtn)
+                        forceReloadBtn.addEventListener('click', () => {
+                            invalidateCache();
+                            bootOnce({force: true});
+                        });
+                    if (skipCacheBtn)
+                        skipCacheBtn.addEventListener('click', () => {
+                            loaderOverlay.style.display = 'none';
+                            fetchPage();
+                        });
+
+                    // initial start
+                    bootOnce();
+
+                    // expose for debugging (optional)
+                    window.__pokedex = {bootOnce, fetchPage, invalidateCache};
+
+                })();
+            </script>
+    </body>
+</html>
