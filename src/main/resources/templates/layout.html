@@ -39,15 +39,18 @@
             }
 
             body{
-                background: radial-gradient(1200px 600px at 10% 10%, rgba(211,47,47,0.06), transparent 6%),
-                    linear-gradient(180deg,#f3f6fb 0%, #eef2f6 100%);
+                background-image: url('https://wallpapers.com/images/featured/pokemon-hd-fazqcs1tmwwte1ap.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
                 min-height:100vh;
                 padding:24px 16px;
                 display:flex;
                 justify-content:center;
                 align-items:flex-start;
             }
-
+             
             .container-shell{
                 width:100%;
                 max-width:var(--max-width);
@@ -224,29 +227,7 @@
                 </nav>
             </header>
 
-            <!-- ASIDE: pokedex device / status (static part of layout) -->
-            <aside class="pokedex-aside" aria-labelledby="deviceTitle">
-                <div class="pokedex-top w-100">
-                    <div id="deviceTitle">POKÉDEX</div>
-                    <div style="font-size:.85rem; opacity:.95">v1.0</div>
-                </div>
-
-                <div id="pokedex-screen" class="pokedex-screen w-100" role="region" aria-live="polite">
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" alt="pokeball">
-                    <div style="font-weight:700; font-size:1.02rem; text-transform:capitalize">Selecciona un Pokémon</div>
-                    <small class="muted">Usa la búsqueda o selecciona una tarjeta</small>
-                </div>
-
-                <div class="w-100 d-flex justify-content-center pokedex-controls">
-                    <div class="pokedex-button" title="A" role="button" aria-label="Botón A"></div>
-                    <div class="pokedex-button" title="B" role="button" aria-label="Botón B"></div>
-                    <div class="pokedex-button" title="C" role="button" aria-label="Botón C"></div>
-                </div>
-
-                <div class="w-100 text-center">
-                    <small>Conexión: <span id="pokedex-status" class="badge-accent">online</span></small>
-                </div>
-            </aside>
+           
 
             <!-- MAIN: fragment where each view injects its content -->
             <main class="pokedex-main" layout:fragment="body">
