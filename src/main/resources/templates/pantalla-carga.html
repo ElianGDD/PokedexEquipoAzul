@@ -1,0 +1,199 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+    <head>
+        <title>Cargando Pokédex</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1"/>
+        <style>
+            :root{
+                --pokedex-red:#d32f2f;
+                --muted:#6b6b6b;
+            }
+
+            .center-vert {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            /* Pokéball animada */
+            .pokeball{
+                width:96px;
+                height:96px;
+                border-radius:50%;
+                position:relative;
+                background: linear-gradient(#fff,#f5f5f5);
+                overflow:visible;
+                margin-bottom:18px;
+                transform-origin:center;
+                animation: bob 1.6s ease-in-out infinite;
+            }
+            .pokeball::before{
+                content:"";
+                position:absolute;
+                left:0;
+                right:0;
+                top:0;
+                height:50%;
+                background: linear-gradient(#ff4b4b,#c52828);
+                border-top-left-radius:50%;
+                border-top-right-radius:50%;
+            }
+            .pokeball::after{
+                content:"";
+                position:absolute;
+                left:8px;
+                right:8px;
+                top:calc(50% - 10px);
+                height:20px;
+                background:#222;
+                border-radius:12px;
+            }
+            .pokeball .button{
+                position:absolute;
+                left:50%;
+                top:50%;
+                width:34px;
+                height:34px;
+                transform:translate(-50%,-50%);
+                background:#fff;
+                border-radius:50%;
+                border:4px solid #222;
+            }
+
+            @keyframes bob{
+                0%,100%{
+                    transform: translateY(0);
+                }
+                50%{
+                    transform: translateY(-8px);
+                }
+            }
+
+            /* Barra de progreso */
+            .progress{
+                height:14px;
+                border-radius:999px;
+                background:#ececec;
+                overflow:hidden;
+                border:1px solid rgba(0,0,0,0.04);
+            }
+            .progress-bar{
+                height:100%;
+                width:0%;
+                transition: width .35s ease;
+                background: linear-gradient(90deg,var(--pokedex-red),#e04b4b);
+            }
+            .small-muted{
+                color:var(--muted);
+                font-size:.95rem;
+                margin-top:8px;
+            }
+
+            /* Animación de pokeballs cayendo */
+            .pokeball-falling {
+                position: absolute;
+                top: -40px;
+                font-size: 32px;
+                animation: fall linear infinite;
+                pointer-events: none;
+                user-select: none;
+                z-index: 0;
+            }
+            @keyframes fall {
+                0% {
+                    transform: translateY(0) rotate(0deg);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container py-5" layout:fragment="body">
+            <div class="center-vert">
+                <div class="pokeball" aria-hidden="true">
+                    <div class="button" aria-hidden="true"></div>
+                </div>
+
+                <h3 class="mb-2">Cargando Pokédex</h3>
+
+                <div class="progress w-75" style="max-width:640px" aria-label="Progreso de carga">
+                    <div id="bar" class="progress-bar"></div>
+                </div>
+
+                <p id="txt" class="small-muted">0 / 0</p>
+                <p id="hint" class="text-muted small">Inicializando…</p>
+            </div>
+        </div>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            (function () {
+                const bar = document.getElementById('bar');
+                const txt = document.getElementById('txt');
+                const hint = document.getElementById('hint');
+
+                function setProgress(loaded, total) {
+                    const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
+                    bar.style.width = pct + '%';
+                    txt.textContent = `${loaded} / ${total}`;
+                }
+
+                // Lluvia de pokeballs
+                function rainPokeballs(count = 5) {
+                    for (let i = 0; i < count; i++) {
+                        const el = document.createElement('div');
+                        el.className = 'pokeball-falling';
+                        el.innerHTML = '<img src="https://www.clipartmax.com/png/middle/129-1298390_pokeball-transparent-png-pokeball-png-pokemon-go.png" style="width:32px;height:32px;" />';
+                        el.style.left = `${Math.random() * 100}vw`;
+                        el.style.animationDuration = `${2 + Math.random() * 3}s`;
+                        document.body.appendChild(el);
+                        setTimeout(() => document.body.removeChild(el), 4000);
+                }
+                }
+                setInterval(() => rainPokeballs(3), 2000);
+
+                async function startAndPoll() {
+                    try {
+                        await fetch('/api/start-load', {method: 'POST'});
+                    } catch (e) {
+                        hint.textContent = 'Error al iniciar la carga. Recarga la página.';
+                        return;
+                    }
+                    for (let i = 0; i < 120; i++) {
+                        try {
+                            const res = await fetch('/api/load-status', {cache: 'no-store'});
+                            if (!res.ok)
+                                throw new Error('no-status');
+                            const j = await res.json();
+                            setProgress(j.loaded || 0, j.total || 0);
+                            hint.textContent = j.status === 'done' ? 'Listo' : 'Cargando…';
+                            if (j.status === 'done') {
+                                bar.style.width = '100%';
+                                txt.textContent = `${j.total} / ${j.total}`;
+                                setTimeout(() => window.location.href = '/pokemons', 800);
+                                return;
+                            }
+                        } catch (e) {
+                            // Ignorar un fallo puntual
+                        }
+                        await new Promise(r => setTimeout(r, i < 8 ? 500 : 1000));
+                    }
+                    hint.textContent = 'Tiempo de espera agotado. Recarga la página.';
+                }
+
+                startAndPoll();
+            })();
+        </script>
+    </th:block>
+</body>
+</html>

@@ -4,7 +4,7 @@
       layout:decorate="~{layout}">
     <head>
         <meta charset="UTF-8"/>
-        <title th:text="'Pokémon: ' + ${pokemon.name}">Detalle Pokémon</title>
+        <title th:text="'Pokémon: ' + ${pokemon.nombre}">Detalle Pokémon</title>
         <style>
             .pokemon-card {
                 max-width: 720px;
@@ -23,32 +23,13 @@
                 width: 120px;
                 height: 120px;
             }
-            .pokemon-stats {
-                margin-top: 1.5rem;
-            }
-            .pokemon-stats li {
-                margin: .25rem 0;
-            }
             .pokemon-types span {
                 padding: .25rem .6rem;
                 margin-right: .5rem;
                 border-radius: 12px;
-                background: #eee;
                 font-size: .9rem;
                 text-transform: capitalize;
-            }
-            .pokemon-abilities span {
-                padding: .25rem .6rem;
-                margin-right: .5rem;
-                border-radius: 12px;
-                background: #cce5ff;
-                font-size: .9rem;
-            }
-            .sprites img {
-                margin: .5rem;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                background: #f9f9f9;
+                color: #fff;
             }
         </style>
     </head>
@@ -58,55 +39,26 @@
 
                 <!-- Cabecera -->
                 <div class="pokemon-header">
-                    <img th:src="${pokemon.sprites.front_default}" alt="sprite"/>
+                    <img th:src="${pokemon.spriteUrl}" th:alt="${pokemon.nombre}"/>
                     <div>
-                        <h2 th:text="${pokemon.name}">Nombre</h2>
+                        <h2 th:text="${pokemon.nombre}">Nombre</h2>
                         <p>ID: <span th:text="${pokemon.id}"></span></p>
-                        <p>Altura: <span th:text="${pokemon.height}"></span> dm</p>
-                        <p>Peso: <span th:text="${pokemon.weight}"></span> hg</p>
                     </div>
                 </div>
 
                 <!-- Tipos -->
-                <div class="pokemon-types">
+                <div class="pokemon-types mt-3">
                     <h4>Tipos</h4>
-                    <span th:each="t : ${pokemon.types}" th:text="${t.type.name}">type</span>
+                    <span th:each="tipo : ${pokemon.tipos}"
+                          th:text="${tipo}"
+                          th:style="'background:'+${pokemon.coloresTipos[tipo]}"></span>
                 </div>
 
-                <!-- Habilidades -->
-                <div class="pokemon-abilities">
-                    <h4>Habilidades</h4>
-                    <span th:each="a : ${pokemon.abilities}" th:text="${a.ability.name}">ability</span>
-                </div>
-
-                <!-- Stats -->
-                <div class="pokemon-stats">
-                    <h4>Stats</h4>
-                    <ul>
-                        <li th:each="s : ${pokemon.stats}">
-                            <span th:text="${s.stat.name}">stat</span>:
-                            <strong th:text="${s.base_stat}">0</strong>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Movimientos -->
-                <div class="pokemon-moves">
-                    <h4>Movimientos</h4>
-                    <ul>
-                        <li th:each="m : ${pokemon.moves}" th:text="${m.move.name}">move</li>
-                    </ul>
-                </div>
-
-                <!-- Sprites adicionales -->
-                <div class="sprites">
-                    <h4>Sprites</h4>
-                    <img th:if="${pokemon.sprites.front_shiny != null}"
-                         th:src="${pokemon.sprites.front_shiny}" alt="front shiny"/>
-                    <img th:if="${pokemon.sprites.back_default != null}"
-                         th:src="${pokemon.sprites.back_default}" alt="back"/>
-                    <img th:if="${pokemon.sprites.back_shiny != null}"
-                         th:src="${pokemon.sprites.back_shiny}" alt="back shiny"/>
+                <!-- Colores principales -->
+                <div class="mt-3">
+                    <h4>Colores</h4>
+                    <p><strong>Primario:</strong> <span th:text="${pokemon.colorPrimario}"></span></p>
+                    <p><strong>Secundario:</strong> <span th:text="${pokemon.colorSecundario}"></span></p>
                 </div>
 
             </div>
