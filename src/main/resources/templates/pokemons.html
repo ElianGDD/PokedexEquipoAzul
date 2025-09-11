@@ -7,157 +7,271 @@
         <meta name="viewport" content="width=device-width,initial-scale=1"/>
         <title>Pokédex — Listado</title>
 
-        <!-- Bootstrap + icons -->
+        <!-- Bootstrap + icons + jQuery -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
         <style>
-            .card-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                gap: 16px;
+            * {
+                font-family: 'Poppins', sans-serif;
             }
-            .poke-card {
-                border-radius: 12px;
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }
+            .GrillaTarjetas {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 20px;
+                margin-top: 30px;
+            }
+            .TarjetaPokemon {
+                border-radius: 20px;
                 overflow: hidden;
                 cursor: pointer;
                 color: #fff;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-                transition: transform .2s;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                transition: all 0.3s;
+                position: relative;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255,255,255,0.1);
             }
-            .poke-card:hover {
-                transform: translateY(-6px);
+            .TarjetaPokemon:hover {
+                transform: translateY(-12px) scale(1.02);
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
             }
-            .poke-thumb {
-                height: 160px;
+            .MiniaturaPrevia {
+                height: 180px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: rgba(255,255,255,0.3);
+                background: rgba(255,255,255,0.15);
             }
-            .poke-thumb img {
-                max-height: 100%;
-                max-width: 100%;
+            .MiniaturaPrevia img {
+                max-height: 120px;
+                max-width: 120px;
                 object-fit: contain;
+                filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+                transition: transform 0.3s ease;
             }
-            .poke-meta {
-                padding: 12px;
+            .TarjetaPokemon:hover .MiniaturaPrevia img {
+                transform: scale(1.1);
+            }
+            .MetadatosPokemon {
+                padding: 20px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                background: rgba(255,255,255,0.05);
             }
-            .poke-name {
-                font-size: 1rem;
+            .MetadatosPokemon h5 {
+                margin: 0;
+                font-size: 1.1rem;
                 font-weight: 600;
                 text-transform: capitalize;
             }
-            .poke-id {
+            .TextoSecundario {
                 font-size: 0.85rem;
                 opacity: 0.9;
+                font-weight: 500;
             }
-            .type-badge {
-                padding: 4px 8px;
-                border-radius: 999px;
-                font-size: .75rem;
-                margin-left: 4px;
+            .BadgeTipo {
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.7rem;
+                margin-left: 6px;
                 text-transform: capitalize;
+                color: #fff;
+            }
+            .navbar-custom {
+                background: rgba(0,0,0,0.2) !important;
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+            .form-control, .form-select {
+                background: rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                border-radius: 12px;
+            }
+            .btn-custom {
+                background: rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                border-radius: 12px;
+            }
+            .estado-info {
+                background: rgba(255,255,255,0.1);
+                border-radius: 15px;
+                padding: 15px 20px;
+                margin-top: 30px;
+            }
+            .no-results {
+                text-align: center;
+                padding: 60px 20px;
+                color: rgba(255,255,255,0.7);
+                font-size: 1.1rem;
+            }
+            .ElementoTarjeta {
+                animation: fadeInUp 0.6s ease forwards;
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            @keyframes fadeInUp {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
         </style>
     </head>
     <body layout:fragment="body">
         <div class="container py-4">
 
-            <nav class="navbar navbar-expand-lg shadow-sm rounded mb-3 px-3 py-2 sticky-top"
-                 style="background-color: rgba(255, 0, 0, 0.85); border-radius: 0.75rem; z-index: 1030;">
+            <!-- Navbar con filtros -->
+            <nav class="navbar navbar-expand-lg shadow-sm rounded mb-3 px-4 py-3 sticky-top navbar-custom">
                 <div class="container-fluid flex-wrap">
-
-                    Título y subtítulo 
                     <div class="d-flex flex-column me-auto text-white">
-                        <h1 class="h4 mb-0 fw-bold">
-                            Pokédex <small class="text-light fw-semibold">/ listado</small>
-                        </h1>
-                        <div class="small text-light">Buscar y filtrar — se mostrará una pantalla de carga solo la primera vez</div>
+                        <h1 class="h3 mb-0 fw-bold"><i class="bi bi-controller me-2"></i>Pokédex <small class="text-light fw-normal opacity-75">/ explorador</small></h1>
+                        <div class="small text-light opacity-75">Descubre y filtra tu Pokémon favorito</div>
                     </div>
+                    <div class="text-end text-light ms-auto me-3 d-none d-md-block"><div id="InformacionTotal" class="fw-semibold">—</div></div>
 
-                    Total info 
-                    <div class="text-end text-light ms-auto me-3 d-none d-md-block">
-                        <div id="totalInfo" th:text="${pokemons.size} + ' Pokémon'">—</div>
-                    </div>
-
-                    Controles 
-                    <form class="d-flex flex-wrap align-items-center gap-2 mt-3 mt-lg-0 w-100">
-                        <!--Buscador--> 
-                        <label class="text-white small">Buscar nombre</label>
-                        <div class="input-group" style="min-width: 250px; max-width: 300px;">
-                            <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
-                            <input id="searchInput" class="form-control form-control-sm"
-                                   placeholder="Buscar por nombre..."
-                                   aria-label="Buscar pokémon">
+                    <form class="d-flex flex-wrap align-items-center gap-3 mt-3 mt-lg-0 w-100">
+                        <div class="d-flex flex-column">
+                            <label class="text-white small mb-1 fw-medium">Buscar nombre</label>
+                            <div class="input-group" style="min-width: 250px; max-width: 300px;">
+                                <span class="input-group-text border-0"><i class="bi bi-search"></i></span>
+                                <input id="CampoBusqueda" class="form-control form-control-sm border-0" placeholder="Ej: Pikachu, Charizard...">
+                            </div>
                         </div>
-
-                        <label>Filtro por distintos tipos</label>
-                        <select id="typesMulti" class="form-select form-select-sm" multiple size="1" style="width:220px" aria-label="Filtro múltiple">
-                            <option th:each="t : ${types}" th:value="${t.name}" th:text="${t.name}"></option>
-                        </select>
-
-                        <!--Página--> 
-                        <label class="text-white small">Paginación</label>
-                        <select id="pageSize" class="form-select form-select-sm" style="width:120px" aria-label="Tamaño de página">
-                            <option value="8" th:selected="${tamanio == 8}">8 / pág</option>
-                            <option value="12" th:selected="${tamanio == 12 or tamanio == null}">12 / pág</option>
-                            <option value="24" th:selected="${tamanio == 24}">24 / pág</option>
-                        </select>
-
-                        <!--Navegación--> 
-                        <!--                        <div class="ms-auto d-flex gap-2 align-items-center">
-                                                    <div id="activeTypes" th:if="${tiposSeleccionados != null and !tiposSeleccionados.isEmpty()}"
-                                                         class="text-dark small">
-                                                        Tipos activos:
-                                                        <span th:each="t : ${tiposSeleccionados}" class="badge bg-secondary me-1" th:text="${t}"></span>
-                                                    </div>
-                                                    <button id="prevBtn" class="btn btn-sm btn-outline-light"
-                                                            aria-label="Anterior"
-                                                            th:disabled="${pagina == null or pagina <= 0}">
-                                                        <i class="bi bi-chevron-left"></i>
-                                                    </button>
-                                                    <span class="text-white small">Página <span th:text="${pagina+1}">1</span></span>
-                                                    <button id="nextBtn" class="btn btn-sm btn-outline-light"
-                                                            aria-label="Siguiente"
-                                                            th:disabled="${pokemons == null or pokemons.size() < (tamanio ?: 12)}">
-                                                        <i class="bi bi-chevron-right"></i>
-                                                    </button>
-                                                </div>-->
+                        <div class="d-flex flex-column">
+                            <label class="text-white small">Filtro por distintos tipos</label>
+                            <select id="SelectorTiposMultiples" class="form-select form-select-sm" multiple size="1" style="width:220px">
+                                <option th:each="t : ${types}" th:value="${t.name}" th:text="${t.name}"></option>
+                            </select>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <label class="text-white small mb-1 fw-medium">Por página</label>
+                            <select id="TamanoPagina" class="form-select form-select-sm border-0" style="width:120px">
+                                <option value="8">8 cards</option>
+                                <option value="12" selected>12 cards</option>
+                                <option value="24">24 cards</option>
+                            </select>
+                        </div>
+                        <div class="ms-auto d-flex gap-2 align-items-end">
+                            <button id="BotonAnterior" type="button" class="btn btn-sm btn-custom"><i class="bi bi-chevron-left"></i> Anterior</button>
+                            <button id="BotonSiguiente" type="button" class="btn btn-sm btn-custom">Siguiente <i class="bi bi-chevron-right"></i></button>
+                        </div>
                     </form>
                 </div>
             </nav>
 
-            <!-- Cards -->
-            <div class="card-grid">
-                <div th:each="pokemon : ${pokemons}">
-                    <div class="poke-card"
-                         th:style="'background:linear-gradient(135deg,' + ${pokemon.colorPrimario} + ',' + ${pokemon.colorSecundario} + ');'"
-                         th:onclick="'window.location.href=\'/pokemon/' + ${pokemon.id} + '\';'">
+            <!-- Tarjetas -->
+            <div class="GrillaTarjetas" id="ContenedorTarjetas"></div>
 
-                        <div class="poke-thumb">
-                            <img th:src="${pokemon.spriteUrl}" th:alt="${pokemon.nombre}">
-                        </div>
-
-                        <div class="poke-meta">
-                            <div>
-                                <div class="poke-name" th:text="${pokemon.nombre}">Nombre</div>
-                                <div class="poke-id">#<span th:text="${pokemon.id}">001</span></div>
-                            </div>
-                            <div class="text-end">
-                                <span th:each="tipo : ${pokemon.tipos}"
-                                      class="type-badge"
-                                      th:text="${tipo}"
-                                      th:style="'background:'+${pokemon.coloresTipos[tipo]}"></span>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
+            <!-- Estado -->
+            <div class="estado-info d-flex justify-content-between align-items-center text-white">
+                <div id="InformacionPagina" class="fw-medium"><i class="bi bi-bookmarks me-2"></i>Página 1</div>
+                <div class="fw-medium"><i class="bi bi-activity me-2"></i>Estado: <span id="EstadoCarga">listo</span></div>
             </div>
         </div>
+
+        <!-- Scripts -->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            $(function () {
+                const $Contenedor = $('#ContenedorTarjetas');
+                const $CampoBusqueda = $('#CampoBusqueda');
+                const $SelectorTiposMultiples = $('#SelectorTiposMultiples');
+                const $TamanoPagina = $('#TamanoPagina');
+                const $BotonAnterior = $('#BotonAnterior');
+                const $BotonSiguiente = $('#BotonSiguiente');
+                const $InformacionTotal = $('#InformacionTotal');
+                const $InformacionPagina = $('#InformacionPagina');
+                const $EstadoCarga = $('#EstadoCarga');
+
+                let estado = {nombre: '', tipos: [], pagina: 0, tamanio: parseInt($TamanoPagina.val(), 10)};
+                let timeoutBusqueda;
+
+                async function cargarPokemons() {
+                    $EstadoCarga.text('cargando...');
+                    try {
+                        const params = {nombre: estado.nombre, pagina: estado.pagina, tamanio: estado.tamanio};
+                        if (estado.tipos.length > 0)
+                            params['tipos'] = estado.tipos;
+
+                        const resp = await $.ajax({url: '/api/pokemons', method: 'GET', traditional: true, data: params});
+                        renderPokemons(resp);
+                        $EstadoCarga.text('listo');
+                    } catch (e) {
+                        console.error(e);
+                        $Contenedor.html('<div class="p-3 text-danger">Error al cargar.</div>');
+                        $EstadoCarga.text('error');
+                    }
+                }
+
+                function renderPokemons(lista) {
+                    $Contenedor.empty();
+                    if (!lista || lista.length === 0) {
+                        $Contenedor.html('<div class="no-results w-100"><i class="bi bi-search"></i><div>No se encontraron Pokémon</div></div>');
+                        $InformacionTotal.html('<i class="bi bi-collection me-1"></i>0 Pokémon');
+                        return;
+                    }
+                    lista.forEach((el, index) => {
+                        const numero = String(el.id).padStart(3, '0');
+                        const tipos = (el.tipos || []).map(t => `<span class="BadgeTipo" style="background:${el.coloresTipos[t] || '#777'}">${t}</span>`).join('');
+                        $Contenedor.append(`
+                            <div class="ElementoTarjeta" style="animation-delay:${index * 0.1}s">
+                                <div class="TarjetaPokemon" style="background:linear-gradient(135deg,${el.colorPrimario},${el.colorSecundario});" onclick="window.location.href='/pokemon/${el.id}'">
+                                    <div class="MiniaturaPrevia"><img src="${el.spriteUrl}" alt="${el.nombre}"></div>
+                                    <div class="MetadatosPokemon"><div><h5>${el.nombre}</h5><div class="TextoSecundario">#${numero}</div></div><div class="text-end">${tipos}</div></div>
+                                </div>
+                            </div>`);
+                    });
+                    $InformacionTotal.html(`<i class="bi bi-collection me-1"></i>${lista.length} Pokémon`);
+                    $InformacionPagina.html(`<i class="bi bi-bookmarks me-2"></i>Página ${estado.pagina + 1}`);
+                    $BotonAnterior.prop('disabled', estado.pagina === 0);
+                    $BotonSiguiente.prop('disabled', lista.length < estado.tamanio);
+                }
+
+                // Listeners
+                $SelectorTiposMultiples.on('change', function () {
+                    estado.tipos = Array.from(this.selectedOptions).map(o => o.value);
+                    estado.pagina = 0;
+                    cargarPokemons();
+                });
+
+                $CampoBusqueda.on('input', function () {
+                    clearTimeout(timeoutBusqueda);
+                    const valor = $(this).val();
+                    timeoutBusqueda = setTimeout(() => {
+                        estado.nombre = valor;
+                        estado.pagina = 0;
+                        cargarPokemons();
+                    }, 300);
+                });
+
+                $TamanoPagina.on('change', function () {
+                    estado.tamanio = parseInt($(this).val(), 10);
+                    estado.pagina = 0;
+                    cargarPokemons();
+                });
+                $BotonAnterior.on('click', function () {
+                    if (estado.pagina > 0) {
+                        estado.pagina--;
+                        cargarPokemons();
+                    }
+                });
+                $BotonSiguiente.on('click', function () {
+                    estado.pagina++;
+                    cargarPokemons();
+                });
+
+                cargarPokemons();
+            });
+        </script>
     </body>
 </html>
