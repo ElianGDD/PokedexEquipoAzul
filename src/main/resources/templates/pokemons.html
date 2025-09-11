@@ -151,8 +151,12 @@
             }
 
             @keyframes animacionBrillo {
-                0% { background-position: 200% 0; }
-                100% { background-position: -200% 0; }
+                0% {
+                    background-position: 200% 0;
+                }
+                100% {
+                    background-position: -200% 0;
+                }
             }
 
             #EncabezadoModalPokemon {
@@ -372,10 +376,10 @@
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 'use strict';
 
-                // Referencias DOM usando jQuery
+                // Referencias DOM
                 const $ContenedorTarjetas = $('#ContenedorTarjetas');
                 const $CampoBusqueda = $('#CampoBusqueda');
                 const $SelectorTipo = $('#SelectorTipo');
@@ -418,189 +422,151 @@
                 const EXPRESION_ID = /\/(\d+)\/?$/;
                 const CLAVE_ALMACENAMIENTO_CACHE = 'pokedex_cache_v1';
                 const TIEMPO_VIDA_CACHE = 1000 * 60 * 60 * 24; // 24 horas
-                const MAXIMO_PAGINAS_ARRANQUE = 80;
                 const LIMITE_CONCURRENCIA = 6;
 
-                // Funciones utilitarias
+                // Observador lazy-load imágenes
+                const ObservadorImagenesPerezosas = new IntersectionObserver((entradas) => {
+                    entradas.forEach(entrada => {
+                        if (entrada.isIntersecting) {
+                            const img = entrada.target;
+                            const $img = $(img);
+                            const fuente = $img.attr('data-src');
+                            if (fuente)
+                                $img.attr('src', fuente);
+                            ObservadorImagenesPerezosas.unobserve(img);
+                        }
+                    });
+                }, {root: null, rootMargin: '300px', threshold: 0.1});
+
+                // Utilidades
                 function ExtraerIdDesdeUrl(url) {
-                    if (!url) return null;
-                    const coincidencia = url.match(EXPRESION_ID);
-                    return coincidencia ? coincidencia[1] : null;
+                    if (!url)
+                        return null;
+                    const m = url.match(EXPRESION_ID);
+                    return m ? m[1] : null;
                 }
 
-                function FuncionAntirrebote(funcion, milisegundos) {
-                    let temporizador;
-                    return function(...argumentos) {
-                        clearTimeout(temporizador);
-                        temporizador = setTimeout(() => funcion.apply(this, argumentos), milisegundos);
+                function FuncionAntirrebote(fn, ms) {
+                    let t;
+                    return function (...a) {
+                        clearTimeout(t);
+                        t = setTimeout(() => fn.apply(this, a), ms);
                     };
                 }
 
-                // Funciones de caché
+                // Cache localStorage
                 function LeerCacheLocalStorage() {
                     try {
-                        const datosCache = localStorage.getItem(CLAVE_ALMACENAMIENTO_CACHE);
-                        return datosCache ? JSON.parse(datosCache) : null;
-                    } catch (error) {
-                        console.warn('Error leyendo caché:', error);
+                        const raw = localStorage.getItem(CLAVE_ALMACENAMIENTO_CACHE);
+                        return raw ? JSON.parse(raw) : null;
+                    } catch (e) {
+                        console.warn('LeerCacheLocalStorage', e);
                         return null;
                     }
                 }
 
                 function GuardarEnCacheLocalStorage(elementos) {
                     try {
-                        const datosCache = {
-                            marcaTiempo: Date.now(),
-                            elementos: elementos
-                        };
-                        localStorage.setItem(CLAVE_ALMACENAMIENTO_CACHE, JSON.stringify(datosCache));
-                    } catch (error) {
-                        console.warn('Error guardando en caché:', error);
+                        const payload = {marcaTiempo: Date.now(), elementos};
+                        localStorage.setItem(CLAVE_ALMACENAMIENTO_CACHE, JSON.stringify(payload));
+                    } catch (e) {
+                        console.warn('GuardarEnCacheLocalStorage', e);
                     }
                 }
 
                 function InvalidarCacheLocalStorage() {
                     try {
                         localStorage.removeItem(CLAVE_ALMACENAMIENTO_CACHE);
-                    } catch (error) {
-                        console.warn('Error invalidando caché:', error);
+                    } catch (e) {
+                        console.warn(e);
                     }
                 }
 
                 function ValidarCacheVigente(datosCache) {
-                    return datosCache && 
-                           datosCache.marcaTiempo && 
-                           (Date.now() - datosCache.marcaTiempo) < TIEMPO_VIDA_CACHE && 
-                           Array.isArray(datosCache.elementos) && 
-                           datosCache.elementos.length > 0;
+                    return datosCache &&
+                            datosCache.marcaTiempo &&
+                            (Date.now() - datosCache.marcaTiempo) < TIEMPO_VIDA_CACHE &&
+                            Array.isArray(datosCache.elementos) &&
+                            datosCache.elementos.length > 0;
                 }
 
-                // Observador de imágenes para lazy loading
-                const ObservadorImagenesPerezosas = new IntersectionObserver((entradas) => {
-                    entradas.forEach(entrada => {
-                        if (entrada.isIntersecting) {
-                            const $imagen = $(entrada.target);
-                            const fuente = $imagen.attr('data-src');
-                            if (fuente) {
-                                $imagen.attr('src', fuente);
-                            }
-                            ObservadorImagenesPerezosas.unobserve(entrada.target);
-                        }
-                    });
-                }, {
-                    root: null,
-                    rootMargin: '300px',
-                    threshold: 0.1
-                });
-
-                // Mapa de colores por tipo de Pokémon
-                function ObtenerColorTipo(tipoPokemon) {
-                    const mapaColores = {
-                        fire: '#EE8130',
-                        water: '#6390F0',
-                        grass: '#7AC74C',
-                        electric: '#F7D02C',
-                        ice: '#96D9D6',
-                        fighting: '#C22E28',
-                        poison: '#A33EA1',
-                        ground: '#E2BF65',
-                        flying: '#A98FF3',
-                        psychic: '#F95587',
-                        bug: '#A6B91A',
-                        rock: '#B6A136',
-                        ghost: '#735797',
-                        dragon: '#6F35FC',
-                        dark: '#705746',
-                        steel: '#B7B7CE',
-                        fairy: '#D685AD',
-                        normal: '#A8A77A'
+                // Mapa colores por tipo
+                function ObtenerColorTipo(tipo) {
+                    const mapa = {
+                        fire: '#EE8130', water: '#6390F0', grass: '#7AC74C', electric: '#F7D02C',
+                        ice: '#96D9D6', fighting: '#C22E28', poison: '#A33EA1', ground: '#E2BF65',
+                        flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A', rock: '#B6A136',
+                        ghost: '#735797', dragon: '#6F35FC', dark: '#705746', steel: '#B7B7CE',
+                        fairy: '#D685AD', normal: '#A8A77A'
                     };
-                    return mapaColores[tipoPokemon] || '#777';
+                    return mapa[tipo] || '#777';
                 }
 
-                function AplicarColoresTipoPokemon($elemento, tiposPokemon) {
-                    if (!$elemento.length) return;
-                    
-                    if (!tiposPokemon || tiposPokemon.length === 0) {
-                        $elemento.css({
-                            'background': '',
-                            'color': ''
-                        });
+                function AplicarColoresTipoPokemon($el, tipos) {
+                    if (!$el || !$el.length)
+                        return;
+                    if (!tipos || tipos.length === 0) {
+                        $el.css({background: '', color: ''});
                         return;
                     }
-
-                    const colorPrimario = ObtenerColorTipo(tiposPokemon[0]) || '#ddd';
-                    const colorSecundario = tiposPokemon[1] ? ObtenerColorTipo(tiposPokemon[1]) : colorPrimario;
-                    
-                    $elemento.css({
-                        'background': `linear-gradient(135deg, ${colorPrimario}, ${colorSecundario})`,
-                        'color': '#fff'
-                    });
+                    const p = ObtenerColorTipo(tipos[0]) || '#ddd';
+                    const s = tipos[1] ? ObtenerColorTipo(tipos[1]) : p;
+                    $el.css({background: `linear-gradient(135deg, ${p}, ${s})`, color: '#fff'});
                 }
 
-                // Fetch con control de concurrencia usando jQuery AJAX
-                async function RealizarPeticionesConcurrentes(urls, limiteConcurrencia = LIMITE_CONCURRENCIA) {
+                // Concurrency-controlled AJAX (jQuery)
+                async function RealizarPeticionesConcurrentes(urls = [], limiteConcurrencia = LIMITE_CONCURRENCIA) {
+                    if (!Array.isArray(urls) || urls.length === 0)
+                        return [];
                     const resultados = new Array(urls.length);
-                    let indice = 0;
+                    let index = 0;
 
-                    async function procesadorTarea() {
-                        while (indice < urls.length) {
-                            const indiceActual = indice++;
+                    async function worker() {
+                        while (true) {
+                            const i = index++;
+                            if (i >= urls.length)
+                                break;
                             try {
-                                const respuesta = await $.ajax({
-                                    url: urls[indiceActual],
-                                    method: 'GET',
-                                    timeout: 10000,
-                                    cache: false
-                                });
-                                resultados[indiceActual] = respuesta;
-                            } catch (error) {
-                                console.warn(`Error en petición ${indiceActual}:`, error);
-                                resultados[indiceActual] = null;
+                                resultados[i] = await $.ajax({url: urls[i], method: 'GET', timeout: 10000, cache: false});
+                            } catch (err) {
+                                console.warn('RealizarPeticionesConcurrentes error', urls[i], err);
+                                resultados[i] = null;
                             }
                         }
                     }
 
-                    const promesasTrabajo = Array.from(
-                        { length: Math.min(limiteConcurrencia, urls.length) }, 
-                        procesadorTarea
-                    );
-                    
-                    await Promise.all(promesasTrabajo);
+                    const workers = Array.from({length: Math.min(limiteConcurrencia, urls.length)}, () => worker());
+                    await Promise.all(workers);
                     return resultados;
                 }
 
-                // Configurar animación hover para sprites
-                function ConfigurarAnimacionHoverSprite($imagen, idPokemon) {
-                    if (!$imagen.length || !idPokemon) return;
-
+                // Animación hover sprites
+                function ConfigurarAnimacionHoverSprite($img, idPokemon) {
+                    if (!$img || !$img.length || !idPokemon)
+                        return;
                     const urlAnimada = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${idPokemon}.gif`;
-                    
-                    $imagen.on('mouseenter', function() {
-                        const $img = $(this);
-                        if (!$img.data('fuente-estatica')) {
-                            $img.data('fuente-estatica', $img.attr('src') || $img.attr('data-src') || '');
-                        }
-                        $img.attr('src', urlAnimada).addClass('sprite-animado');
+
+                    $img.on('mouseenter', function () {
+                        const $t = $(this);
+                        if (!$t.data('fuente-estatica'))
+                            $t.data('fuente-estatica', $t.attr('src') || $t.attr('data-src') || '');
+                        $t.attr('src', urlAnimada).addClass('sprite-animado');
                     });
 
-                    $imagen.on('mouseleave', function() {
-                        const $img = $(this);
-                        const fuenteEstatica = $img.data('fuente-estatica');
-                        if (fuenteEstatica !== undefined) {
-                            $img.attr('src', fuenteEstatica);
-                            $img.removeData('fuente-estatica');
-                        }
-                        $img.removeClass('sprite-animado');
+                    $img.on('mouseleave', function () {
+                        const $t = $(this);
+                        const fuente = $t.data('fuente-estatica');
+                        if (fuente !== undefined)
+                            $t.attr('src', fuente);
+                        $t.removeData('fuente-estatica').removeClass('sprite-animado');
                     });
                 }
 
-                // Renderizar esqueletos de carga
+                // Render skeletons
                 function RenderizarEsqueletosCarga(cantidad = 8) {
                     $ContenedorTarjetas.empty();
-                    
                     for (let i = 0; i < cantidad; i++) {
-                        const esqueleto = `
+                        $ContenedorTarjetas.append(`
                             <div class="ElementoTarjeta" aria-hidden="true">
                                 <div class="TarjetaPokemon">
                                     <div class="MiniaturaPrevia EsqueletoAnimado"></div>
@@ -615,37 +581,34 @@
                                     </div>
                                 </div>
                             </div>
-                        `;
-                        $ContenedorTarjetas.append(esqueleto);
-                    }
+                        `);
+                }
                 }
 
-                // Renderizar tarjetas de Pokémon
+                // Render tarjetas
                 function RenderizarTarjetasPokemon(elementos) {
                     $ContenedorTarjetas.empty();
-                    
                     if (!Array.isArray(elementos) || elementos.length === 0) {
                         $ContenedorTarjetas.html('<div class="p-3 text-muted">No hay pokémones disponibles</div>');
                         $InformacionTotal.text('0 Pokémon');
                         return;
                     }
 
-                    elementos.forEach(elemento => {
-                        const idPokemon = ExtraerIdDesdeUrl(elemento.url);
-                        const urlSprite = idPokemon 
-                            ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${idPokemon}.png`
-                            : 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
+                    elementos.forEach(el => {
+                        const id = ExtraerIdDesdeUrl(el.url);
+                        const sprite = id ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
+                                : 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
 
-                        const tarjeta = `
-                            <div class="ElementoTarjeta" data-url="${elemento.url}" data-name="${(elemento.name || '').toLowerCase()}">
+                        const $tar = $(`
+                            <div class="ElementoTarjeta" data-url="${el.url}" data-name="${(el.name || '').toLowerCase()}">
                                 <div class="TarjetaPokemon" role="button" tabindex="0">
                                     <div class="MiniaturaPrevia">
-                                        <img class="ImagenMiniatura" alt="${elemento.name || 'sprite'}" data-src="${urlSprite}">
+                                        <img class="ImagenMiniatura" alt="${el.name || 'sprite'}" data-src="${sprite}">
                                     </div>
                                     <div class="MetadatosPokemon">
                                         <div>
-                                            <h5 style="text-transform:capitalize">${elemento.name}</h5>
-                                            <div class="TextoSecundario">#<span class="IdPokemon">${idPokemon || '?'}</span></div>
+                                            <h5 style="text-transform:capitalize">${el.name}</h5>
+                                            <div class="TextoSecundario">#<span class="IdPokemon">${id || '?'}</span></div>
                                         </div>
                                         <div class="text-end">
                                             <span class="BadgeTipo" style="background:var(--color-pokedex-rojo)">?</span>
@@ -653,85 +616,68 @@
                                     </div>
                                 </div>
                             </div>
-                        `;
+                        `);
 
-                        const $nuevaTarjeta = $(tarjeta);
-                        const $imagen = $nuevaTarjeta.find('.ImagenMiniatura');
-                        
-                        ObservadorImagenesPerezosas.observe($imagen[0]);
-                        ConfigurarAnimacionHoverSprite($imagen, idPokemon);
-                        
-                        $ContenedorTarjetas.append($nuevaTarjeta);
+                        const $img = $tar.find('.ImagenMiniatura');
+                        if ($img.length && $img[0])
+                            ObservadorImagenesPerezosas.observe($img[0]);
+                        ConfigurarAnimacionHoverSprite($img, id);
+                        $ContenedorTarjetas.append($tar);
                     });
 
                     $InformacionTotal.text(`${elementos.length} Pokémon`);
-                    
-                    const textoPagina = EstadoAplicacion.esMultiple 
-                        ? `Filtro: ${Array.from($SelectorTiposMultiples[0].selectedOptions || []).map(o => o.value).join(', ')}`
-                        : `Página ${EstadoAplicacion.pagina + 1}`;
-                    
+                    const textoPagina = EstadoAplicacion.esMultiple
+                            ? `Filtro: ${Array.from($SelectorTiposMultiples[0].selectedOptions || []).map(o => o.value).join(', ')}`
+                            : `Página ${EstadoAplicacion.pagina + 1}`;
                     $InformacionPagina.text(textoPagina);
-                    
                     $BotonAnterior.prop('disabled', EstadoAplicacion.esMultiple || EstadoAplicacion.pagina === 0);
                     $BotonSiguiente.prop('disabled', EstadoAplicacion.esMultiple);
-
                     EnriquecerTarjetasConTiposPokemon(elementos);
                 }
 
-                // Enriquecer tarjetas con información de tipos
+                // Enriquecer tarjetas con tipos (detalle por pokemon)
                 async function EnriquecerTarjetasConTiposPokemon(elementos) {
-                    if (!elementos || elementos.length === 0) return;
-
+                    if (!Array.isArray(elementos) || elementos.length === 0)
+                        return;
+                    const urls = elementos.map(e => e.url).filter(Boolean);
+                    if (urls.length === 0)
+                        return;
                     try {
-                        const urlsDetalle = elementos.map(elemento => elemento.url);
-                        const detallesPokemon = await RealizarPeticionesConcurrentes(urlsDetalle, LIMITE_CONCURRENCIA);
-
-                        detallesPokemon.forEach((detalle, indice) => {
-                            if (!detalle) return;
-
-                            const $tarjeta = $(`.ElementoTarjeta[data-url="${elementos[indice].url}"]`);
-                            if (!$tarjeta.length) return;
-
-                            const $tarjetaInterna = $tarjeta.find('.TarjetaPokemon');
-                            const tiposPokemon = (detalle.types || []).map(tipo => tipo.type.name);
-                            
-                            AplicarColoresTipoPokemon($tarjetaInterna, tiposPokemon);
-                            
-                            const $badge = $tarjeta.find('.BadgeTipo');
+                        const detalles = await RealizarPeticionesConcurrentes(urls, LIMITE_CONCURRENCIA);
+                        detalles.forEach((det, i) => {
+                            if (!det)
+                                return;
+                            const sel = `.ElementoTarjeta[data-url="${elementos[i].url}"]`;
+                            const $tar = $(sel);
+                            if (!$tar.length)
+                                return;
+                            const tipos = (det.types || []).map(t => t.type.name);
+                            AplicarColoresTipoPokemon($tar.find('.TarjetaPokemon'), tipos);
+                            const $badge = $tar.find('.BadgeTipo');
                             if ($badge.length) {
-                                $badge.text(tiposPokemon.join(' / '));
-                                $badge.css('background', ObtenerColorTipo(tiposPokemon[0]) || '#777');
+                                $badge.text(tipos.join(' / '));
+                                $badge.css('background', ObtenerColorTipo(tipos[0]) || '#777');
                             }
                         });
-                    } catch (error) {
-                        console.warn('Error enriqueciendo tarjetas:', error);
+                    } catch (e) {
+                        console.warn('EnriquecerTarjetasConTiposPokemon', e);
                     }
                 }
 
-                // Sistema de autoplay para sprites en modal
-                const ControladorSpriteModal = {
-                    intervalo: null,
-                    listaSprites: [],
-                    indiceActual: 0
-                };
-
-                function IniciarAutoplayModalSprite(listaSprites, indiceInicial = 0) {
+                // Controlador sprites modal
+                const ControladorSpriteModal = {intervalo: null, listaSprites: [], indiceActual: 0};
+                function IniciarAutoplayModalSprite(lista, inicio = 0) {
                     DetenerAutoplayModalSprite();
-                    
-                    if (!Array.isArray(listaSprites) || listaSprites.length === 0) return;
-
-                    ControladorSpriteModal.listaSprites = listaSprites;
-                    ControladorSpriteModal.indiceActual = indiceInicial % listaSprites.length;
-                    
-                    $ImagenModalPokemon.attr('src', listaSprites[ControladorSpriteModal.indiceActual]);
-                    $ImagenModalPokemon.addClass('sprite-reproduciendo');
-
+                    if (!Array.isArray(lista) || lista.length === 0)
+                        return;
+                    ControladorSpriteModal.listaSprites = lista;
+                    ControladorSpriteModal.indiceActual = inicio % lista.length;
+                    $ImagenModalPokemon.attr('src', lista[ControladorSpriteModal.indiceActual]).addClass('sprite-reproduciendo');
                     ControladorSpriteModal.intervalo = setInterval(() => {
                         ControladorSpriteModal.indiceActual = (ControladorSpriteModal.indiceActual + 1) % ControladorSpriteModal.listaSprites.length;
                         $ImagenModalPokemon.attr('src', ControladorSpriteModal.listaSprites[ControladorSpriteModal.indiceActual]);
                     }, 900);
                 }
-
                 function DetenerAutoplayModalSprite() {
                     if (ControladorSpriteModal.intervalo) {
                         clearInterval(ControladorSpriteModal.intervalo);
@@ -739,28 +685,52 @@
                         $ImagenModalPokemon.removeClass('sprite-reproduciendo');
                     }
                 }
-
-                // Event listener para click en imagen del modal
-                $ImagenModalPokemon.on('click', function() {
-                    if (ControladorSpriteModal.intervalo) {
+                $ImagenModalPokemon.on('click', function () {
+                    if (ControladorSpriteModal.intervalo)
                         DetenerAutoplayModalSprite();
-                    } else {
-                        IniciarAutoplayModalSprite(
-                            ControladorSpriteModal.listaSprites, 
-                            ControladorSpriteModal.indiceActual || 0
-                        );
-                    }
+                    else
+                        IniciarAutoplayModalSprite(ControladorSpriteModal.listaSprites || [], ControladorSpriteModal.indiceActual || 0);
                 });
 
-                // Manejar click en tarjetas para mostrar detalles completos
-                $ContenedorTarjetas.on('click', '.ElementoTarjeta', async function() {
-                    const $tarjeta = $(this);
-                    const urlPokemon = $tarjeta.data('url');
-                    const idPokemon = ExtraerIdDesdeUrl(urlPokemon);
-                    
-                    if (!idPokemon && !urlPokemon) return;
+                // --- PokeAPI helpers: ObtenerDatosPokeAPI, ObtenerDetallesPokemonCompletos ---
+                async function ObtenerDatosPokeAPI(endpointOrUrl, timeout = 10000) {
+                    const url = typeof endpointOrUrl === 'string' && endpointOrUrl.startsWith('http')
+                            ? endpointOrUrl
+                            : `https://pokeapi.co/api/v2/${String(endpointOrUrl).replace(/^\/+/, '')}`;
+                    try {
+                        return await $.ajax({url, method: 'GET', timeout, cache: false});
+                    } catch (err) {
+                        console.warn('ObtenerDatosPokeAPI error', url, err);
+                        throw err;
+                }
+                }
 
-                    // Limpiar modal
+                async function ObtenerDetallesPokemonCompletos(urlOrIdOrName) {
+                    let idOrName = urlOrIdOrName;
+                    if (typeof urlOrIdOrName === 'string' && urlOrIdOrName.startsWith('http')) {
+                        const id = ExtraerIdDesdeUrl(urlOrIdOrName);
+                        if (id)
+                            idOrName = id;
+                    }
+                    const endpointPokemon = `pokemon/${idOrName}`;
+                    const endpointSpecies = `pokemon-species/${idOrName}`;
+                    try {
+                        const [pokemon, species] = await Promise.all([
+                            ObtenerDatosPokeAPI(endpointPokemon, 15000),
+                            ObtenerDatosPokeAPI(endpointSpecies, 15000).catch(() => null)
+                        ]);
+                        return {pokemon, species};
+                    } catch (err) {
+                        throw err;
+                    }
+                }
+
+                // Click en tarjeta -> mostrar modal con detalle
+                $ContenedorTarjetas.on('click', '.ElementoTarjeta', async function () {
+                    const $this = $(this);
+                    const urlPokemon = $this.data('url');
+                    const idPokemon = ExtraerIdDesdeUrl(urlPokemon) || $this.data('id') || $this.data('name');
+
                     $TituloModalPokemon.text('Cargando...');
                     $ImagenModalPokemon.attr('src', '');
                     $MiniaturasPokemon.empty();
@@ -769,431 +739,198 @@
                     $EstadisticasModalPokemon.empty();
                     $HabilidadesModalPokemon.empty();
                     $MovimientosModalPokemon.text('');
-                    
-                    try {
-                        // Obtener datos completos de PokeAPI
-                        const { pokemon: datosPokemon, species: especiesPokemon } = await ObtenerDetallesPokemonCompletos(
-                            urlPokemon || idPokemon
-                        );
 
+                    try {
+                        const {pokemon: datosPokemon, species: especiesPokemon} = await ObtenerDetallesPokemonCompletos(urlPokemon || idPokemon);
                         if (!datosPokemon) {
                             $TituloModalPokemon.text('Error');
                             $InformacionBasicaModal.text('No se pudieron obtener los datos del Pokémon.');
-                            if (ModalBootstrap) ModalBootstrap.show();
+                            if (ModalBootstrap)
+                                ModalBootstrap.show();
                             return;
                         }
 
-                        // Poblar modal con datos completos
-                        const nombreCapitalizado = datosPokemon.name.charAt(0).toUpperCase() + datosPokemon.name.slice(1);
-                        $TituloModalPokemon.text(`#${datosPokemon.id} ${nombreCapitalizado}`);
+                        const nombre = datosPokemon.name ? datosPokemon.name.charAt(0).toUpperCase() + datosPokemon.name.slice(1) : 'Pokémon';
+                        $TituloModalPokemon.text(`#${datosPokemon.id} ${nombre}`);
                         DetenerAutoplayModalSprite();
 
-                        // Obtener todos los sprites disponibles
+                        // Recolectar sprites
                         const spritesDisponibles = [];
-                        
-                        // Sprite oficial de artwork (principal)
-                        if (datosPokemon.sprites?.other?.['official-artwork']?.front_default) {
-                            spritesDisponibles.push({
-                                url: datosPokemon.sprites.other['official-artwork'].front_default,
-                                nombre: 'Artwork Oficial',
-                                tipo: 'artwork'
-                            });
-                        }
+                        const s = datosPokemon.sprites || {};
+                        if (s.other?.['official-artwork']?.front_default)
+                            spritesDisponibles.push({url: s.other['official-artwork'].front_default, nombre: 'Artwork Oficial', tipo: 'artwork'});
+                        if (s.front_default)
+                            spritesDisponibles.push({url: s.front_default, nombre: 'Frontal', tipo: 'normal'});
+                        if (s.back_default)
+                            spritesDisponibles.push({url: s.back_default, nombre: 'Espalda', tipo: 'normal'});
+                        if (s.front_shiny)
+                            spritesDisponibles.push({url: s.front_shiny, nombre: 'Shiny Frontal', tipo: 'shiny'});
+                        if (s.back_shiny)
+                            spritesDisponibles.push({url: s.back_shiny, nombre: 'Shiny Espalda', tipo: 'shiny'});
+                        if (s.versions?.['generation-v']?.['black-white']?.animated?.front_default)
+                            spritesDisponibles.push({url: s.versions['generation-v']['black-white'].animated.front_default, nombre: 'Animado', tipo: 'animated'});
+                        if (s.other?.home?.front_default)
+                            spritesDisponibles.push({url: s.other.home.front_default, nombre: 'Home', tipo: 'home'});
 
-                        // Sprites estándar
-                        if (datosPokemon.sprites?.front_default) {
-                            spritesDisponibles.push({
-                                url: datosPokemon.sprites.front_default,
-                                nombre: 'Frontal',
-                                tipo: 'normal'
-                            });
-                        }
-
-                        if (datosPokemon.sprites?.back_default) {
-                            spritesDisponibles.push({
-                                url: datosPokemon.sprites.back_default,
-                                nombre: 'Espalda',
-                                tipo: 'normal'
-                            });
-                        }
-
-                        // Sprites shiny
-                        if (datosPokemon.sprites?.front_shiny) {
-                            spritesDisponibles.push({
-                                url: datosPokemon.sprites.front_shiny,
-                                nombre: 'Shiny Frontal',
-                                tipo: 'shiny'
-                            });
-                        }
-
-                        if (datosPokemon.sprites?.back_shiny) {
-                            spritesDisponibles.push({
-                                url: datosPokemon.sprites.back_shiny,
-                                nombre: 'Shiny Espalda',
-                                tipo: 'shiny'
-                            });
-                        }
-
-                        // Sprites animados (Generación V)
-                        if (datosPokemon.sprites?.versions?.['generation-v']?.['black-white']?.animated?.front_default) {
-                            spritesDisponibles.push({
-                                url: datosPokemon.sprites.versions['generation-v']['black-white'].animated.front_default,
-                                nombre: 'Animado',
-                                tipo: 'animated'
-                            });
-                        }
-
-                        // Sprites de Home
-                        if (datosPokemon.sprites?.other?.home?.front_default) {
-                            spritesDisponibles.push({
-                                url: datosPokemon.sprites.other.home.front_default,
-                                nombre: 'Home',
-                                tipo: 'home'
-                            });
-                        }
-
-                        // Crear miniaturas clickeables mejoradas
+                        // Miniaturas clickeables
                         $MiniaturasPokemon.empty();
-                        spritesDisponibles.forEach((sprite, indice) => {
-                            const colorTipo = sprite.tipo === 'shiny' ? 'warning' : 
-                                            sprite.tipo === 'animated' ? 'success' : 
-                                            sprite.tipo === 'artwork' ? 'primary' : 'secondary';
-
-                            const $miniatura = $(`
-                                <div class="miniatura mb-2 p-1 border rounded" 
-                                     style="cursor:pointer; transition: all 0.3s; max-width: 80px;"
-                                     title="${sprite.nombre}">
-                                    <img src="${sprite.url}" alt="${sprite.nombre}" 
-                                         style="max-width:100%; height:60px; object-fit:contain; display:block;">
-                                    <small class="text-${colorTipo} d-block text-center" style="font-size:0.7rem;">
-                                        ${sprite.nombre}
-                                    </small>
+                        spritesDisponibles.forEach((sp, idx) => {
+                            const colorTipo = sp.tipo === 'shiny' ? 'warning' : sp.tipo === 'animated' ? 'success' : sp.tipo === 'artwork' ? 'primary' : 'secondary';
+                            const $mini = $(`
+                                <div class="miniatura mb-2 p-1 border rounded" style="cursor:pointer; transition: all 0.3s; max-width: 80px;" title="${sp.nombre}">
+                                    <img src="${sp.url}" alt="${sp.nombre}" style="max-width:100%; height:60px; object-fit:contain; display:block;">
+                                    <small class="text-${colorTipo} d-block text-center" style="font-size:0.7rem;">${sp.nombre}</small>
                                 </div>
                             `);
-
-                            $miniatura.on('click', function() {
+                            $mini.on('click', function () {
                                 DetenerAutoplayModalSprite();
-                                $ImagenModalPokemon.attr('src', sprite.url);
-                                
+                                $ImagenModalPokemon.attr('src', sp.url);
                                 $MiniaturasPokemon.find('.miniatura').removeClass('border-primary border-3');
                                 $(this).addClass('border-primary border-3');
-                                
-                                ControladorSpriteModal.listaSprites = spritesDisponibles.map(s => s.url);
-                                ControladorSpriteModal.indiceActual = indice;
+                                ControladorSpriteModal.listaSprites = spritesDisponibles.map(x => x.url);
+                                ControladorSpriteModal.indiceActual = idx;
                             });
-
-                            $MiniaturasPokemon.append($miniatura);
+                            $MiniaturasPokemon.append($mini);
                         });
 
-                        // Establecer imagen principal
                         const imagenPrincipal = spritesDisponibles.length > 0 ? spritesDisponibles[0].url : '';
                         $ImagenModalPokemon.attr('src', imagenPrincipal);
 
-                        // Aplicar colores de tipo al header del modal
-                        const tiposPokemon = (datosPokemon.types || []).map(tipo => tipo.type.name);
+                        // Colores y badges tipos
+                        const tiposPokemon = (datosPokemon.types || []).map(t => t.type.name);
                         AplicarColoresTipoPokemon($('#EncabezadoModalPokemon'), tiposPokemon);
-
-                        // Mostrar tipos con mejor formato
-                        const badgesTipos = tiposPokemon.map(tipo => 
-                            `<div class="BadgeTipo me-1 mb-1" style="background:${ObtenerColorTipo(tipo)}; padding:8px 12px; border-radius:20px;">
-                                <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>
-                                ${tipo.toUpperCase()}
-                            </div>`
-                        ).join(' ');
+                        const badgesTipos = tiposPokemon.map(tipo => `<div class="BadgeTipo me-1 mb-1" style="background:${ObtenerColorTipo(tipo)}; padding:8px 12px; border-radius:20px;"> <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>${tipo.toUpperCase()}</div>`).join(' ');
                         $TiposModalPokemon.html(badgesTipos);
 
-                        // Información básica expandida
+                        // Info básica
                         const altura = datosPokemon.height ? (datosPokemon.height / 10).toFixed(1) : '-';
                         const peso = datosPokemon.weight ? (datosPokemon.weight / 10).toFixed(1) : '-';
                         const experienciaBase = datosPokemon.base_experience || '-';
-                        
                         let infoBasica = `
                             <div class="row g-2 small">
-                                <div class="col-6">
-                                    <strong><i class="bi bi-rulers"></i> Altura:</strong> ${altura} m
-                                </div>
-                                <div class="col-6">
-                                    <strong><i class="bi bi-speedometer2"></i> Peso:</strong> ${peso} kg
-                                </div>
-                                <div class="col-6">
-                                    <strong><i class="bi bi-star"></i> Exp. Base:</strong> ${experienciaBase}
-                                </div>
-                                <div class="col-6">
-                                    <strong><i class="bi bi-hash"></i> Orden:</strong> ${datosPokemon.order || '-'}
-                                </div>
+                                <div class="col-6"><strong><i class="bi bi-rulers"></i> Altura:</strong> ${altura} m</div>
+                                <div class="col-6"><strong><i class="bi bi-speedometer2"></i> Peso:</strong> ${peso} kg</div>
+                                <div class="col-6"><strong><i class="bi bi-star"></i> Exp. Base:</strong> ${experienciaBase}</div>
+                                <div class="col-6"><strong><i class="bi bi-hash"></i> Orden:</strong> ${datosPokemon.order || '-'}</div>
                             </div>
                         `;
-
-                        // Agregar información de especies si está disponible
                         if (especiesPokemon) {
-                            const colorEspecie = especiesPokemon.color ? especiesPokemon.color.name : 'desconocido';
-                            const formaEspecie = especiesPokemon.shape ? especiesPokemon.shape.name : 'desconocida';
-                            
-                            infoBasica += `
-                                <div class="row g-2 small mt-2">
-                                    <div class="col-6">
-                                        <strong><i class="bi bi-palette"></i> Color:</strong> ${colorEspecie}
-                                    </div>
-                                    <div class="col-6">
-                                        <strong><i class="bi bi-shapes"></i> Forma:</strong> ${formaEspecie}
-                                    </div>
-                                </div>
-                            `;
+                            const colorEspecie = especiesPokemon.color?.name || 'desconocido';
+                            const formaEspecie = especiesPokemon.shape?.name || 'desconocida';
+                            infoBasica += `<div class="row g-2 small mt-2"><div class="col-6"><strong><i class="bi bi-palette"></i> Color:</strong> ${colorEspecie}</div><div class="col-6"><strong><i class="bi bi-shapes"></i> Forma:</strong> ${formaEspecie}</div></div>`;
                         }
-                        
                         $InformacionBasicaModal.html(infoBasica);
 
-                        // Estadísticas mejoradas
-                        const MAXIMO_ESTADISTICA = 255;
+                        // Estadísticas
                         $EstadisticasModalPokemon.empty();
-                        
-                        const nombresStats = {
-                            'hp': 'HP',
-                            'attack': 'Ataque',
-                            'defense': 'Defensa',
-                            'special-attack': 'Atq. Esp.',
-                            'special-defense': 'Def. Esp.',
-                            'speed': 'Velocidad'
-                        };
-
+                        const MAXIMO_ESTADISTICA = 255;
                         let totalStats = 0;
-                        (datosPokemon.stats || []).forEach(estadistica => {
-                            const nombreStat = nombresStats[estadistica.stat.name] || estadistica.stat.name;
-                            const baseStat = estadistica.base_stat;
-                            const effortValue = estadistica.effort || 0;
-                            totalStats += baseStat;
-                            
-                            const porcentaje = Math.round((baseStat / MAXIMO_ESTADISTICA) * 100);
+                        const nombresStats = {hp: 'HP', attack: 'Ataque', defense: 'Defensa', 'special-attack': 'Atq. Esp.', 'special-defense': 'Def. Esp.', speed: 'Velocidad'};
+                        (datosPokemon.stats || []).forEach(st => {
+                            const nombre = nombresStats[st.stat.name] || st.stat.name;
+                            const base = st.base_stat || 0;
+                            totalStats += base;
+                            const porcentaje = Math.round((base / MAXIMO_ESTADISTICA) * 100);
                             const colorBarra = ObtenerColorTipo(datosPokemon.types[0]?.type?.name || '') || '#6c757d';
-                            
-                            const $filaEstadistica = $(`
+                            $EstadisticasModalPokemon.append(`
                                 <div class="FilaEstadistica">
-                                    <div class="EtiquetaEstadistica d-flex align-items-center">
-                                        ${nombreStat}
-                                        ${effortValue > 0 ? `<small class="badge bg-info ms-1" title="Effort Value">+${effortValue}</small>` : ''}
-                                    </div>
+                                    <div class="EtiquetaEstadistica d-flex align-items-center">${nombre}</div>
                                     <div class="BarraEstadistica position-relative">
                                         <div class="RellenoEstadistica" style="width:${porcentaje}%; background:${colorBarra}"></div>
-                                        <small class="position-absolute top-0 start-0 w-100 text-center text-white" 
-                                               style="line-height:10px; font-size:0.7rem; font-weight:bold;">
-                                            ${baseStat}
-                                        </small>
+                                        <small class="position-absolute top-0 start-0 w-100 text-center text-white" style="line-height:10px; font-size:0.7rem; font-weight:bold;">${base}</small>
                                     </div>
-                                    <div style="width:48px; text-align:right">
-                                        <strong>${baseStat}</strong>
-                                    </div>
+                                    <div style="width:48px; text-align:right"><strong>${base}</strong></div>
                                 </div>
                             `);
-                            
-                            $EstadisticasModalPokemon.append($filaEstadistica);
                         });
-
-                        // Agregar total de estadísticas
                         $EstadisticasModalPokemon.append(`
                             <div class="FilaEstadistica border-top pt-2 mt-2">
-                                <div class="EtiquetaEstadistica">
-                                    <strong>TOTAL</strong>
-                                </div>
+                                <div class="EtiquetaEstadistica"><strong>TOTAL</strong></div>
                                 <div class="BarraEstadistica"></div>
-                                <div style="width:48px; text-align:right">
-                                    <strong class="text-primary">${totalStats}</strong>
-                                </div>
+                                <div style="width:48px; text-align:right"><strong class="text-primary">${totalStats}</strong></div>
                             </div>
                         `);
 
-                        // Habilidades mejoradas
-                        const habilidadesHTML = (datosPokemon.abilities || []).map(habilidad => {
-                            const esOculta = habilidad.is_hidden;
-                            const nombreHabilidad = habilidad.ability.name.replace('-', ' ');
-                            const claseCSS = esOculta ? 'bg-warning text-dark' : 'bg-primary text-white';
-                            const icono = esOculta ? 'bi-eye-slash' : 'bi-lightning';
-                            
-                            return `
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="badge ${claseCSS} me-2 px-3 py-2">
-                                        <i class="bi ${icono} me-1"></i>
-                                        ${nombreHabilidad}
-                                    </span>
-                                    ${esOculta ? '<small class="text-muted">(Habilidad Oculta)</small>' : ''}
-                                </div>
-                            `;
+                        // Habilidades
+                        const habilidadesHTML = (datosPokemon.abilities || []).map(h => {
+                            const nombre = h.ability.name.replace('-', ' ');
+                            return `<div class="d-flex align-items-center mb-2"><span class="badge ${h.is_hidden ? 'bg-warning text-dark' : 'bg-primary text-white'} me-2 px-3 py-2"><i class="bi ${h.is_hidden ? 'bi-eye-slash' : 'bi-lightning'} me-1"></i>${nombre}</span>${h.is_hidden ? '<small class="text-muted">(Habilidad Oculta)</small>' : ''}</div>`;
                         }).join('');
                         $HabilidadesModalPokemon.html(habilidadesHTML || '<small class="text-muted">Sin habilidades disponibles</small>');
 
-                        // Movimientos expandidos (primeros 12 con más detalles)
-                        const movimientosOrdenados = (datosPokemon.moves || [])
-                            .sort((a, b) => {
-                                const nivelA = a.version_group_details[0]?.level_learned_at || 999;
-                                const nivelB = b.version_group_details[0]?.level_learned_at || 999;
-                                return nivelA - nivelB;
-                            })
-                            .slice(0, 12);
-
-                        const movimientosHTML = movimientosOrdenados.map(movimiento => {
-                            const nombreMovimiento = movimiento.move.name.replace('-', ' ');
-                            const detalleVersion = movimiento.version_group_details[0];
-                            const nivelAprendido = detalleVersion?.level_learned_at || 0;
-                            const metodoAprendizaje = detalleVersion?.move_learn_method?.name || 'unknown';
-                            
-                            let colorBadge = 'secondary';
-                            let textoMetodo = metodoAprendizaje;
-                            
-                            switch (metodoAprendizaje) {
-                                case 'level-up':
-                                    colorBadge = 'success';
-                                    textoMetodo = `Nv. ${nivelAprendido}`;
-                                    break;
-                                case 'machine':
-                                    colorBadge = 'info';
-                                    textoMetodo = 'TM/TR';
-                                    break;
-                                case 'egg':
-                                    colorBadge = 'warning';
-                                    textoMetodo = 'Huevo';
-                                    break;
-                                case 'tutor':
-                                    colorBadge = 'primary';
-                                    textoMetodo = 'Tutor';
-                                    break;
+                        // Movimientos (primeros 12 ordenados por nivel)
+                        const movimientosOrdenados = (datosPokemon.moves || []).slice().sort((a, b) => {
+                            const na = a.version_group_details[0]?.level_learned_at || 999;
+                            const nb = b.version_group_details[0]?.level_learned_at || 999;
+                            return na - nb;
+                        }).slice(0, 12);
+                        const movimientosHTML = movimientosOrdenados.map(m => {
+                            const nombre = m.move.name.replace('-', ' ');
+                            const det = m.version_group_details[0] || {};
+                            let metodo = det.move_learn_method?.name || 'unknown';
+                            let badge = 'secondary';
+                            let texto = metodo;
+                            if (metodo === 'level-up') {
+                                badge = 'success';
+                                texto = `Nv. ${det.level_learned_at || 0}`;
                             }
-                            
-                            return `
-                                <div class="d-flex align-items-center mb-1">
-                                    <span class="badge bg-light text-dark me-2 flex-grow-1 text-start" 
-                                          style="min-width:120px;">${nombreMovimiento}</span>
-                                    <span class="badge bg-${colorBadge} small">${textoMetodo}</span>
-                                </div>
-                            `;
+                            if (metodo === 'machine') {
+                                badge = 'info';
+                                texto = 'TM/TR';
+                            }
+                            if (metodo === 'egg') {
+                                badge = 'warning';
+                                texto = 'Huevo';
+                            }
+                            if (metodo === 'tutor') {
+                                badge = 'primary';
+                                texto = 'Tutor';
+                            }
+                            return `<div class="d-flex align-items-center mb-1"><span class="badge bg-light text-dark me-2 flex-grow-1 text-start" style="min-width:120px;">${nombre}</span><span class="badge bg-${badge} small">${texto}</span></div>`;
                         }).join('');
-                        
                         $MovimientosModalPokemon.html(movimientosHTML || '<small class="text-muted">Sin movimientos disponibles</small>');
 
-                        // Configurar enlace de detalle completo a PokeAPI
-                        $EnlaceDetalleCompleto.attr('href', `https://pokeapi.co/api/v2/pokemon/${datosPokemon.id}`);
-                        $EnlaceDetalleCompleto.text('Ver en PokeAPI');
+                        // Link externo
+                        $EnlaceDetalleCompleto.attr('href', `https://pokeapi.co/api/v2/pokemon/${datosPokemon.id}`).text('Ver en PokeAPI');
 
-                        // Configurar autoplay de sprites
-                        const urlsSprites = spritesDisponibles.map(s => s.url);
-                        ControladorSpriteModal.listaSprites = urlsSprites;
+                        // Autoplay sprites si hay más de uno
+                        const urls = spritesDisponibles.map(s => s.url);
+                        ControladorSpriteModal.listaSprites = urls;
                         ControladorSpriteModal.indiceActual = 0;
-                        
-                        if (urlsSprites.length > 1) {
-                            setTimeout(() => {
-                                IniciarAutoplayModalSprite(urlsSprites, 0);
-                            }, 2000); // Iniciar autoplay después de 2 segundos
-                        }
+                        if (urls.length > 1)
+                            setTimeout(() => IniciarAutoplayModalSprite(urls, 0), 800);
 
-                        // Mostrar modal
-                        if (ModalBootstrap) ModalBootstrap.show();
+                        if (ModalBootstrap)
+                            ModalBootstrap.show();
 
-                    } catch (error) {
-                        console.error('Error cargando detalles del Pokemon:', error);
+                    } catch (err) {
+                        console.error('Error cargando detalles del Pokemon:', err);
                         $TituloModalPokemon.text('Error de Conexión');
-                        $InformacionBasicaModal.html(`
-                            <div class="text-danger">
-                                <i class="bi bi-wifi-off me-2"></i>
-                                No se pudo conectar con la PokeAPI. Verifica tu conexión a internet.
-                            </div>
-                        `);
-                        if (ModalBootstrap) ModalBootstrap.show();
+                        $InformacionBasicaModal.html(`<div class="text-danger"><i class="bi bi-wifi-off me-2"></i>No se pudo conectar con la PokeAPI. Verifica tu conexión a internet.</div>`);
+                        if (ModalBootstrap)
+                            ModalBootstrap.show();
                     }
-                });emon);
-
-                    // Mostrar tipos
-                    const badgesTipos = tiposPokemon.map(tipo => 
-                        `<div class="BadgeTipo" style="background:${ObtenerColorTipo(tipo)}">${tipo}</div>`
-                    ).join(' ');
-                    $TiposModalPokemon.html(badgesTipos);
-
-                    // Información básica
-                    const altura = datosPokemon.height ? (datosPokemon.height / 10).toFixed(1) : '-';
-                    const peso = datosPokemon.weight ? (datosPokemon.weight / 10).toFixed(1) : '-';
-                    const experienciaBase = datosPokemon.base_experience || '-';
-                    
-                    $InformacionBasicaModal.html(
-                        `Altura: ${altura} m · Peso: ${peso} kg · Exp. base: ${experienciaBase}`
-                    );
-
-                    // Estadísticas
-                    const MAXIMO_ESTADISTICA = 255;
-                    $EstadisticasModalPokemon.empty();
-                    
-                    (datosPokemon.stats || []).forEach(estadistica => {
-                        const porcentaje = Math.round((estadistica.base_stat / MAXIMO_ESTADISTICA) * 100);
-                        const colorBarra = ObtenerColorTipo(datosPokemon.types[0]?.type?.name || '') || '#6c757d';
-                        
-                        const $filaEstadistica = $(`
-                            <div class="FilaEstadistica">
-                                <div class="EtiquetaEstadistica">${estadistica.stat.name}</div>
-                                <div class="BarraEstadistica">
-                                    <div class="RellenoEstadistica" style="width:${porcentaje}%; background:${colorBarra}"></div>
-                                </div>
-                                <div style="width:48px; text-align:right">
-                                    <strong>${estadistica.base_stat}</strong>
-                                </div>
-                            </div>
-                        `);
-                        
-                        $EstadisticasModalPokemon.append($filaEstadistica);
-                    });
-
-                    // Habilidades
-                    const habilidadesHTML = (datosPokemon.abilities || []).map(habilidad => 
-                        `<div>${habilidad.ability.name}${habilidad.is_hidden ? ' (oculta)' : ''}</div>`
-                    ).join('');
-                    $HabilidadesModalPokemon.html(habilidadesHTML);
-
-                    // Movimientos (primeros 8)
-                    const movimientosHTML = (datosPokemon.moves || [])
-                        .slice(0, 8)
-                        .map(movimiento => 
-                            `<span class="badge bg-light text-dark me-1 mb-1">${movimiento.move.name}</span>`
-                        ).join(' ');
-                    $MovimientosModalPokemon.html(movimientosHTML);
-
-                    // Configurar enlace de detalle completo
-                    $EnlaceDetalleCompleto.attr('href', `/pokemon/${datosPokemon.id}`);
-
-                    // Iniciar autoplay de sprites
-                    ControladorSpriteModal.listaSprites = listaSprites;
-                    ControladorSpriteModal.indiceActual = 0;
-                    IniciarAutoplayModalSprite(listaSprites, 0);
-
-                    // Mostrar modal
-                    if (ModalBootstrap) ModalBootstrap.show();
                 });
 
-                // Función para obtener página de datos
+                // Obtener página de datos (usa endpoints locales si existen, si no fallback a vista paginada)
                 async function ObtenerPaginaDatos() {
                     $EstadoCarga.text('cargando...');
                     RenderizarEsqueletosCarga(Math.min(8, EstadoAplicacion.tamanoPagina));
 
-                    const tiposSeleccionados = Array.from($SelectorTiposMultiples[0].selectedOptions || [])
-                        .map(opcion => opcion.value)
-                        .filter(Boolean);
+                    const tiposSeleccionados = Array.from($SelectorTiposMultiples[0]?.selectedOptions || []).map(o => o.value).filter(Boolean);
 
                     try {
-                        let elementosObtenidos = [];
+                        let elementos = [];
 
                         if (tiposSeleccionados.length >= 2) {
-                            // Búsqueda por múltiples tipos
                             EstadoAplicacion.esMultiple = true;
-                            
-                            const parametros = new URLSearchParams();
-                            tiposSeleccionados.forEach(tipo => parametros.append('types', tipo));
-
-                            const respuesta = await $.ajax({
-                                url: '/api/pokemons/by-types?' + parametros.toString(),
-                                method: 'GET',
-                                timeout: 15000
-                            });
-                            
-                            elementosObtenidos = respuesta;
+                            const params = new URLSearchParams();
+                            tiposSeleccionados.forEach(t => params.append('types', t));
+                            const resp = await $.ajax({url: '/api/pokemons/by-types?' + params.toString(), method: 'GET', timeout: 15000});
+                            elementos = resp || [];
                         } else {
-                            // Búsqueda paginada normal
                             EstadoAplicacion.esMultiple = false;
-                            
-                            const respuesta = await $.ajax({
+                            const resp = await $.ajax({
                                 url: '/api/pokemons',
                                 method: 'GET',
                                 data: {
@@ -1204,30 +941,26 @@
                                 },
                                 timeout: 15000
                             });
-                            
-                            elementosObtenidos = Array.isArray(respuesta) ? respuesta : (respuesta.items || []);
+                            elementos = Array.isArray(resp) ? resp : (resp.items || []);
                         }
 
-                        RenderizarTarjetasPokemon(elementosObtenidos);
+                        RenderizarTarjetasPokemon(elementos);
                         $EstadoCarga.text('listo');
-
-                    } catch (error) {
-                        console.error('Error obteniendo datos de API:', error);
+                    } catch (err) {
+                        console.error('ObtenerPaginaDatos error', err);
                         $ContenedorTarjetas.html('<div class="p-3 text-danger">Error cargando pokémones. Por favor, intenta nuevamente.</div>');
                         $EstadoCarga.text('error');
                     }
                 }
 
-                // Función con antirrebote para búsqueda
                 const BusquedaConAntirrebote = FuncionAntirrebote(() => {
                     EstadoAplicacion.pagina = 0;
                     ObtenerPaginaDatos();
                 }, 300);
 
-                // Función principal de inicialización mejorada con PokeAPI
+                // Inicialización: descarga lista completa y cache
                 async function InicializarAplicacionUnaVez(opciones = { forzar: false }) {
                     const datosCache = LeerCacheLocalStorage();
-                    
                     if (!opciones.forzar && ValidarCacheVigente(datosCache)) {
                         RenderizarTarjetasPokemon(datosCache.elementos);
                         return;
@@ -1238,214 +971,155 @@
                     $MensajeArranque.text('Conectando con PokeAPI...');
 
                     try {
-                        // Obtener información inicial de la API
                         $MensajeArranque.text('Obteniendo lista de Pokemon...');
                         $ProgresoArranque.css('width', '15%').text('15%');
-                        
-                        // Obtener los primeros 1010 Pokemon (generaciones I-IX)
-                        const respuestaCompleta = await $.ajax({
-                            url: 'https://pokeapi.co/api/v2/pokemon?limit=1010&offset=0',
-                            method: 'GET',
-                            timeout: 30000
-                        });
 
-                        if (respuestaCompleta && respuestaCompleta.results) {
-                            const todosPokemon = respuestaCompleta.results;
+                        const resp = await $.ajax({url: 'https://pokeapi.co/api/v2/pokemon?limit=1010&offset=0', method: 'GET', timeout: 30000});
+                        if (resp && resp.results) {
+                            const todos = resp.results;
                             $ProgresoArranque.css('width', '50%').text('50%');
-                            $MensajeArranque.text(`Procesando ${todosPokemon.length} Pokemon...`);
+                            $MensajeArranque.text(`Procesando ${todos.length} Pokemon...`);
 
-                            // Procesar los Pokemon en lotes para mostrar progreso
+                            // Simular procesamiento por lotes para UI
                             const TAMANO_LOTE = 50;
-                            const pokemonProcesados = [];
-                            
-                            for (let i = 0; i < todosPokemon.length; i += TAMANO_LOTE) {
-                                const lote = todosPokemon.slice(i, i + TAMANO_LOTE);
-                                pokemonProcesados.push(...lote);
-                                
-                                const progreso = 50 + Math.round((i / todosPokemon.length) * 40);
+                            const procesados = [];
+                            for (let i = 0; i < todos.length; i += TAMANO_LOTE) {
+                                const lote = todos.slice(i, i + TAMANO_LOTE);
+                                procesados.push(...lote);
+                                const progreso = 50 + Math.round((i / todos.length) * 40);
                                 $ProgresoArranque.css('width', `${progreso}%`).text(`${progreso}%`);
-                                $MensajeArranque.text(`Procesando Pokemon ${i + 1} - ${Math.min(i + TAMANO_LOTE, todosPokemon.length)} de ${todosPokemon.length}`);
-                                
-                                // Pequeña pausa para no bloquear la UI
-                                await new Promise(resolve => setTimeout(resolve, 50));
+                                $MensajeArranque.text(`Procesando Pokemon ${i + 1} - ${Math.min(i + TAMANO_LOTE, todos.length)} de ${todos.length}`);
+                                await new Promise(r => setTimeout(r, 30));
                             }
 
-                            // Guardar en caché y mostrar
-                            GuardarEnCacheLocalStorage(pokemonProcesados);
+                            GuardarEnCacheLocalStorage(procesados);
                             $ProgresoArranque.css('width', '95%').text('95%');
                             $MensajeArranque.text('Finalizando...');
-
                             setTimeout(() => {
-                                RenderizarTarjetasPokemon(pokemonProcesados);
+                                RenderizarTarjetasPokemon(procesados);
                                 $ProgresoArranque.css('width', '100%').text('100%');
                                 setTimeout(() => $SuperposicionCargador.hide(), 300);
                             }, 200);
-                            
                             return;
                         }
-
-                    } catch (error) {
-                        console.error('Error inicializando con PokeAPI:', error);
-                        
-                        $MensajeArranque.text('Error de conexión. Cargando datos básicos...');
-                        $ProgresoArranque.css('width', '20%').text('20%');
-
-                        // Fallback: cargar solo los primeros Pokemon básicos
-                        try {
-                            const respuestaBasica = await $.ajax({
-                                url: 'https://pokeapi.co/api/v2/pokemon?limit=151&offset=0',
-                                method: 'GET',
-                                timeout: 15000
-                            });
-
-                            if (respuestaBasica && respuestaBasica.results) {
-                                const pokemonBasicos = respuestaBasica.results;
-                                GuardarEnCacheLocalStorage(pokemonBasicos);
-                                RenderizarTarjetasPokemon(pokemonBasicos);
-                                
-                                $ProgresoArranque.css('width', '100%').text('100%');
-                                setTimeout(() => $SuperposicionCargador.hide(), 500);
-                                return;
-                            }
-                        } catch (errorFallback) {
-                            console.error('Error en fallback:', errorFallback);
-                        }
+                    } catch (err) {
+                        console.warn('InicializarAplicacionUnaVez error', err);
                     }
 
-                    // Si todo falla, mostrar vista paginada
+                    // Fallback intentar 151
+                    try {
+                        $MensajeArranque.text('Fallo inicial. Intentando fallback 151...');
+                        const rb = await $.ajax({url: 'https://pokeapi.co/api/v2/pokemon?limit=151&offset=0', method: 'GET', timeout: 15000});
+                        if (rb && rb.results) {
+                            GuardarEnCacheLocalStorage(rb.results);
+                            RenderizarTarjetasPokemon(rb.results);
+                            $ProgresoArranque.css('width', '100%').text('100%');
+                            setTimeout(() => $SuperposicionCargador.hide(), 500);
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn('Fallback error', err);
+                    }
+
+                    // Si todo falla: ocultar overlay y cargar paginado
                     $('#SugerenciaArranque').text('No se pudo conectar con PokeAPI. Usando vista paginada limitada.');
                     $SuperposicionCargador.hide();
-                    
-                    // Cargar datos paginados como último recurso
                     ObtenerPaginaDatos();
                 }
 
-                // Función mejorada para obtener tipos de Pokemon
+                // Cargar tipos
                 async function CargarTiposPokemon() {
                     try {
-                        const respuesta = await $.ajax({
-                            url: 'https://pokeapi.co/api/v2/type',
-                            method: 'GET',
-                            timeout: 10000
-                        });
-
-                        if (respuesta && respuesta.results) {
-                            const tipos = respuesta.results
-                                .filter(tipo => !['unknown', 'shadow'].includes(tipo.name)) // Filtrar tipos especiales
-                                .map(tipo => ({ name: tipo.name, url: tipo.url }));
-
-                            // Actualizar selectores de tipo
+                        const resp = await $.ajax({url: 'https://pokeapi.co/api/v2/type', method: 'GET', timeout: 10000});
+                        if (resp && resp.results) {
+                            const tipos = resp.results.filter(t => !['unknown', 'shadow'].includes(t.name)).map(t => ({name: t.name, url: t.url}));
                             $SelectorTipo.find('option:not(:first)').remove();
                             $SelectorTiposMultiples.empty();
-
                             tipos.forEach(tipo => {
-                                const nombreCapitalizado = tipo.name.charAt(0).toUpperCase() + tipo.name.slice(1);
-                                $SelectorTipo.append(`<option value="${tipo.name}">${nombreCapitalizado}</option>`);
-                                $SelectorTiposMultiples.append(`<option value="${tipo.name}">${nombreCapitalizado}</option>`);
+                                const cap = tipo.name.charAt(0).toUpperCase() + tipo.name.slice(1);
+                                $SelectorTipo.append(`<option value="${tipo.name}">${cap}</option>`);
+                                $SelectorTiposMultiples.append(`<option value="${tipo.name}">${cap}</option>`);
                             });
+                            return;
                         }
-                    } catch (error) {
-                        console.warn('No se pudieron cargar los tipos de Pokemon:', error);
-                        // Mantener tipos básicos si falla
-                        const tiposBasicos = [
-                            'normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison',
-                            'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
-                        ];
-
-                        $SelectorTipo.find('option:not(:first)').remove();
-                        $SelectorTiposMultiples.empty();
-
-                        tiposBasicos.forEach(tipo => {
-                            const nombreCapitalizado = tipo.charAt(0).toUpperCase() + tipo.slice(1);
-                            $SelectorTipo.append(`<option value="${tipo}">${nombreCapitalizado}</option>`);
-                            $SelectorTiposMultiples.append(`<option value="${tipo}">${nombreCapitalizado}</option>`);
-                        });
+                    } catch (e) {
+                        console.warn('CargarTiposPokemon falló', e);
                     }
+
+                    // Fallback tipos básicos
+                    const tiposBasicos = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+                    $SelectorTipo.find('option:not(:first)').remove();
+                    $SelectorTiposMultiples.empty();
+                    tiposBasicos.forEach(tipo => {
+                        const cap = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+                        $SelectorTipo.append(`<option value="${tipo}">${cap}</option>`);
+                        $SelectorTiposMultiples.append(`<option value="${tipo}">${cap}</option>`);
+                    });
                 }
 
-                // Event listeners mejorados para controles
-                $CampoBusqueda.on('input', function() {
+                // Listeners UI
+                $CampoBusqueda.on('input', function () {
                     EstadoAplicacion.consulta = $(this).val().trim();
                     BusquedaConAntirrebote();
                 });
 
-                $SelectorTipo.on('change', function() {
+                $SelectorTipo.on('change', function () {
                     EstadoAplicacion.tipo = $(this).val();
-                    // Limpiar selección múltiple cuando se usa selector simple
                     $SelectorTiposMultiples.find('option').prop('selected', false);
                     $TiposActivos.empty();
                     EstadoAplicacion.pagina = 0;
                     ObtenerPaginaDatos();
                 });
 
-                $SelectorTiposMultiples.on('change', function() {
-                    const tiposSeleccionados = Array.from(this.selectedOptions).map(opcion => opcion.value);
-                    
-                    // Limpiar selector simple cuando se usa múltiple
-                    if (tiposSeleccionados.length > 0) {
+                $SelectorTiposMultiples.on('change', function () {
+                    const sel = Array.from(this.selectedOptions || []).map(o => o.value);
+                    if (sel.length > 0) {
                         $SelectorTipo.val('');
                         EstadoAplicacion.tipo = '';
                     }
-                    
                     EstadoAplicacion.pagina = 0;
                     ObtenerPaginaDatos();
-
-                    // Actualizar indicador de tipos activos
-                    const etiquetasTipos = tiposSeleccionados
-                        .map(tipo => {
-                            const nombreCapitalizado = tipo.charAt(0).toUpperCase() + tipo.slice(1);
-                            return `<span class="EtiquetaTipo" style="background:${ObtenerColorTipo(tipo)};color:white;">${nombreCapitalizado}</span>`;
-                        })
-                        .join('');
-                    $TiposActivos.html(etiquetasTipos);
+                    const etiquetas = sel.map(t => `<span class="EtiquetaTipo" style="background:${ObtenerColorTipo(t)};color:white;">${t.charAt(0).toUpperCase() + t.slice(1)}</span>`).join('');
+                    $TiposActivos.html(etiquetas);
                 });
 
-                // Mejorar comportamiento del selector múltiple
-                $SelectorTiposMultiples.on('focus', function() {
+                $SelectorTiposMultiples.on('focus', function () {
                     $(this).attr('size', Math.min(10, this.options.length || 5));
                 });
-
-                $SelectorTiposMultiples.on('blur', function() {
-                    // Retrasar el cambio para permitir selecciones múltiples
-                    setTimeout(() => {
-                        $(this).attr('size', 1);
-                    }, 200);
+                $SelectorTiposMultiples.on('blur', function () {
+                    setTimeout(() => $(this).attr('size', 1), 200);
                 });
 
-                $TamanoPagina.on('change', function() {
+                $TamanoPagina.on('change', function () {
                     EstadoAplicacion.tamanoPagina = parseInt($(this).val(), 10);
                     EstadoAplicacion.pagina = 0;
                     ObtenerPaginaDatos();
                 });
-
-                $BotonAnterior.on('click', function() {
+                $BotonAnterior.on('click', () => {
                     if (EstadoAplicacion.pagina > 0) {
                         EstadoAplicacion.pagina--;
                         ObtenerPaginaDatos();
                     }
                 });
-
-                $BotonSiguiente.on('click', function() {
+                $BotonSiguiente.on('click', () => {
                     EstadoAplicacion.pagina++;
                     ObtenerPaginaDatos();
                 });
 
-                // Event listeners para botones de carga
-                $BotonForzarRecarga.on('click', function() {
+                $BotonForzarRecarga.on('click', () => {
                     InvalidarCacheLocalStorage();
-                    InicializarAplicacionUnaVez({ forzar: true });
+                    InicializarAplicacionUnaVez({forzar: true});
                 });
-
-                $BotonSaltarCache.on('click', function() {
+                $BotonSaltarCache.on('click', () => {
                     $SuperposicionCargador.hide();
                     ObtenerPaginaDatos();
                 });
 
-                // Inicializar aplicación
-                CargarTiposPokemon(); // Cargar tipos primero
+                // Inicializar
+                CargarTiposPokemon();
                 InicializarAplicacionUnaVez();
 
-                // Exponer funciones para debugging
+                // Export para debugging
                 window.ControladorPokedex = {
                     InicializarAplicacionUnaVez,
                     ObtenerPaginaDatos,
@@ -1456,5 +1130,6 @@
                 };
             });
         </script>
+
     </body>
 </html>
