@@ -13,6 +13,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -51,6 +52,9 @@ public class ServicioPokemon {
                 .build();
     }
 
+    // =======================
+    // === PRECARGA
+    // =======================
     @PostConstruct
     public void init() {
         // la precarga se dispara desde LoaderController vía precargarDatos()
@@ -61,7 +65,6 @@ public class ServicioPokemon {
         construirIndiceTipos();
 
         estadoCarga.reiniciar(catalogoPokemons.size());
-
         precargarDetallesPokemonAsincrono();
     }
 
@@ -120,7 +123,6 @@ public class ServicioPokemon {
         int total = catalogoPokemons.size();
         CountDownLatch latch = new CountDownLatch(total);
 
-        // limitar concurrencia para no saturar
         Semaphore limiteConcurrente = new Semaphore(32);
 
         for (Integer id : catalogoPokemons.keySet()) {
@@ -147,29 +149,30 @@ public class ServicioPokemon {
         });
     }
 
-    public Integer extraerIdDesdeUrl(String url) {
-        if (url == null) {
-            return null;
-        }
-        Matcher matcher = patronIdUrl.matcher(url);
-        if (matcher.matches()) {
-            try {
-                return Integer.valueOf(matcher.group(1));
-            } catch (NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    public List<NamedAPIResource> buscarPokemons(String nombre, String tipo, int pagina, int tamanio) {
+    // =======================
+    // === CONSULTAS
+    // =======================
+    public List<PokemonVistaDto> buscarPokemons(String nombre, List<String> tipos, int pagina, int tamanio) {
         Stream<Integer> flujoIds = catalogoPokemons.keySet().stream();
 
-        if (tipo != null && !tipo.isBlank()) {
-            Set<Integer> idsPorTipo = indiceTiposAPokemons.getOrDefault(tipo.toLowerCase(), Collections.emptySet());
-            flujoIds = idsPorTipo.stream();
+        // ✅ Filtrado por tipos múltiples (intersección de conjuntos)
+        if (tipos != null && !tipos.isEmpty()) {
+            Set<Integer> idsFiltrados = null;
+            for (String tipo : tipos) {
+                Set<Integer> idsPorTipo = indiceTiposAPokemons.getOrDefault(tipo.toLowerCase(), Collections.emptySet());
+                if (idsFiltrados == null) {
+                    idsFiltrados = idsPorTipo;
+                } else {
+                    idsFiltrados.retainAll(idsPorTipo); // intersección
+                }
+            }
+            if (idsFiltrados == null || idsFiltrados.isEmpty()) {
+                return List.of(); // ningún resultado
+            }
+            flujoIds = idsFiltrados.stream();
         }
 
+        // ✅ Filtrado por nombre
         if (nombre != null && !nombre.isBlank()) {
             String consulta = nombre.toLowerCase();
             flujoIds = flujoIds.filter(id -> {
@@ -178,13 +181,53 @@ public class ServicioPokemon {
             });
         }
 
+        // ✅ Paginación
         List<Integer> listaIds = flujoIds.sorted().toList();
         int inicio = Math.min(pagina * tamanio, listaIds.size());
         int fin = Math.min(inicio + tamanio, listaIds.size());
 
         return listaIds.subList(inicio, fin).stream()
-                .map(catalogoPokemons::get)
+                .map(this::obtenerDetalleVistaPorId)
+                .filter(Objects::nonNull)
                 .toList();
+
+    }
+
+    private PokemonVistaDto obtenerDetalleVistaPorId(Integer id) {
+        Pokemon p = obtenerDetallePokemonPorId(id);
+        return convertirAPokemonVista(p);
+    }
+
+    public List<PokemonVistaDto> buscarPokemonsPorTipos(List<String> listaTipos) {
+        if (listaTipos == null || listaTipos.isEmpty()) {
+            return List.of();
+        }
+
+        // Intersección de sets
+        Set<Integer> idsCoincidentes = null;
+        for (String tipo : listaTipos) {
+            Set<Integer> ids = indiceTiposAPokemons.getOrDefault(tipo.toLowerCase(), Collections.emptySet());
+            if (idsCoincidentes == null) {
+                idsCoincidentes = new HashSet<>(ids);
+            } else {
+                idsCoincidentes.retainAll(ids);
+            }
+        }
+
+        if (idsCoincidentes == null || idsCoincidentes.isEmpty()) {
+            return List.of();
+        }
+
+        return idsCoincidentes.stream()
+                .sorted()
+                .map(this::obtenerDetalleVistaPorId)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    public PokemonVistaDto obtenerDetalleVistaPorId(int id) {
+        Pokemon pokemon = obtenerDetallePokemonPorId(id);
+        return convertirAPokemonVista(pokemon);
     }
 
     public PokemonVistaDto convertirAPokemonVista(Pokemon pokemon) {
@@ -218,12 +261,34 @@ public class ServicioPokemon {
                         .uri("/pokemon/{id}", clave)
                         .retrieve()
                         .bodyToMono(Pokemon.class)
-                        .timeout(Duration.ofSeconds(10)) // timeout para no colgarse
+                        .timeout(Duration.ofSeconds(10))
                         .block()
         );
     }
 
+    // =======================
+    // === UTILS
+    // =======================
+    public Integer extraerIdDesdeUrl(String url) {
+        if (url == null) {
+            return null;
+        }
+        Matcher matcher = patronIdUrl.matcher(url);
+        if (matcher.matches()) {
+            try {
+                return Integer.valueOf(matcher.group(1));
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     public EstadoCargaAplicacion getEstadoCarga() {
         return estadoCarga;
+    }
+
+    public int contarTotalPokemons() {
+        return catalogoPokemons.size();
     }
 }

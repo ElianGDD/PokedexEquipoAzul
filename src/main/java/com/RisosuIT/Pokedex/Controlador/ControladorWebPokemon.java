@@ -7,11 +7,13 @@ import com.RisosuIT.Pokedex.DTO.PokemonVistaDto;
 import com.RisosuIT.Pokedex.Servicio.ServicioPokemon;
 import com.RisosuIT.Pokedex.Servicio.ServicioTipo;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class ControladorWebPokemon {
@@ -30,22 +32,39 @@ public class ControladorWebPokemon {
     }
 
     @GetMapping("/pokemons")
-    public String listarPokemons(Model modelo) {
-        List<NamedAPIResource> pagina = servicioPokemon.buscarPokemons("", null, 0, 24);
+    public String listarPokemons(
+            @RequestParam(defaultValue = "") String nombre,
+            @RequestParam(required = false) List<String> tipos,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "12") int tamanio,
+            Model modelo) {
 
-        List<PokemonVistaDto> vistaPokemons = pagina.stream()
+        // Obtener resultados del servicio
+        List<PokemonVistaDto> paginaPokemons = servicioPokemon.buscarPokemons(nombre,
+                tipos,
+                pagina, tamanio);
+
+        // Convertir a DTO de vista
+        List<PokemonVistaDto> vistaPokemons = paginaPokemons.stream()
                 .map(p -> {
-                    Integer id = extraerIdDesdeUrl(p.getUrl());
-                    Pokemon detalle = id != null ? servicioPokemon.obtenerDetallePokemonPorId(id) : null;
-                    return detalle != null ? servicioPokemon.convertirAPokemonVista(detalle) : null;
+                    Integer id = extraerIdDesdeUrl(String.valueOf(p.id()));
+                    Pokemon detalle = (id != null) ? servicioPokemon.obtenerDetallePokemonPorId(id) : null;
+                    return (detalle != null) ? servicioPokemon.convertirAPokemonVista(detalle) : null;
                 })
-                .filter(p -> p != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        modelo.addAttribute("pokemons", vistaPokemons);
+        // Tipos para filtros
+        GetAllTypes tiposDisponibles = servicioTipo.obtenerTodosLosTiposCacheados();
 
-        GetAllTypes tipos = servicioTipo.obtenerTodosLosTiposCacheados();
-        modelo.addAttribute("types", tipos.getResults());
+        // Atributos para la vista
+        modelo.addAttribute("pokemons", vistaPokemons);
+        modelo.addAttribute("total", servicioPokemon.contarTotalPokemons()); // total global
+        modelo.addAttribute("pagina", pagina);
+        modelo.addAttribute("tamanio", tamanio);
+        modelo.addAttribute("nombre", nombre);
+        modelo.addAttribute("types", tiposDisponibles != null ? tiposDisponibles.getResults() : List.of());
+        modelo.addAttribute("tiposSeleccionados", tipos != null ? tipos : List.of());
 
         return "pokemons";
     }
