@@ -6,6 +6,7 @@ import com.RisosuIT.Pokedex.Service.ServicePokemon;
 import com.RisosuIT.Pokedex.Service.ServiceType;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,12 +31,7 @@ public class PokemonApiController {
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-        return pokemonService.searchCatalog(name, type, page, size);
-    }
-
-    @GetMapping("/{id}")
-    public Pokemon detail(@PathVariable int id) {
-        return pokemonService.getPokemonDetailById(id);
+        return pokemonService.searchPokemonCatalog(name, type, page, size);
     }
 
     @GetMapping("/by-types")
@@ -43,7 +39,7 @@ public class PokemonApiController {
         if (types == null || types.size() < 2) {
             return ResponseEntity.ok(List.of());
         }
-        List<NamedAPIResource> result = serviceType.getPokemonsByTwoTypesReactive(types.get(0), types.get(1)).block();
+        List<NamedAPIResource> result = serviceType.getPokemonsByTwoTypes(types.get(0), types.get(1));
         return ResponseEntity.ok(result);
     }
 

@@ -1,6 +1,5 @@
 package com.RisosuIT.Pokedex.Service;
 
-// LoadingService.java
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -22,10 +21,8 @@ public class LoadingService {
         CompletableFuture.runAsync(() -> {
             for (String p : pagesToFetch) {
                 try {
-                    // tu lógica de fetch/cache (p. ej. WebClient call)
-                    // simulate:
                     Thread.sleep(200);
-                } catch (Exception e) {
+                } catch (InterruptedException ex) {
                 }
                 loaded.incrementAndGet();
             }
@@ -41,7 +38,6 @@ public class LoadingService {
         );
     }
 
-    // llamado por tu init o endpoint para lanzar la precarga
     public void setTotals(int tot) {
         total.set(tot);
     }
