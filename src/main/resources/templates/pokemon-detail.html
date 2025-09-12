@@ -845,321 +845,197 @@
                 </div>
             </div>
         </div>
-
+    <th:block layout:fragment="scripts">
         <script>
-            // Variables globales para el audio
-            let pokemonHoverAudio = null;
-            let audioTimeout = null;
-            let isPlaying = false;
+            (() => {
+                // Estado
+                let audioEl, userActivated = false, throttle = false;
 
-            // Inicializar cuando se carga la página
-            document.addEventListener('DOMContentLoaded', function () {
-                pokemonHoverAudio = document.getElementById('pokemonHoverAudio');
-                const mainImageContainer = document.getElementById('mainImageContainer');
+                // Una sola inicialización
+                window.addEventListener('DOMContentLoaded', () => {
+                    // Audio: usa elemento oculto pero renderizable
+                    audioEl = document.getElementById('pokemonHoverAudio');
+                    if (audioEl) {
+                        audioEl.volume = 0.7;
+                        // Desbloquear reproducción tras cualquier click/toque
+                        const enableAudio = () => {
+                            userActivated = true;
+                            document.removeEventListener('pointerdown', enableAudio, true);
+                        };
+                        document.addEventListener('pointerdown', enableAudio, true);
 
-                if (pokemonHoverAudio && mainImageContainer) {
-                    // Configurar volumen
-                    pokemonHoverAudio.volume = 0.7;
-
-                    // Eventos para la imagen principal
-                    mainImageContainer.addEventListener('mouseenter', playPokemonSound);
-                    mainImageContainer.addEventListener('mouseleave', stopPokemonSound);
-
-                    // También agregar eventos a las imágenes animadas
-                    const animatedSprites = document.querySelectorAll('.animated-sprites img');
-                    animatedSprites.forEach(sprite => {
-                        sprite.addEventListener('mouseenter', playPokemonSound);
-                        sprite.addEventListener('mouseleave', stopPokemonSound);
-                    });
-
-                    // Agregar eventos a los sprites normales
-                    const spriteItems = document.querySelectorAll('.sprite-item img');
-                    spriteItems.forEach(sprite => {
-                        sprite.addEventListener('mouseenter', playPokemonSound);
-                        sprite.addEventListener('mouseleave', stopPokemonSound);
-                    });
-                }
-
-                // Inicializar animaciones adicionales
-                initializeAnimations();
-            });
-
-            // Función para reproducir el sonido del Pokémon
-            function playPokemonSound() {
-                if (pokemonHoverAudio && !isPlaying) {
-                    // Limpiar timeout anterior si existe
-                    if (audioTimeout) {
-                        clearTimeout(audioTimeout);
-                    }
-
-                    // Intentar reproducir el audio
-                    pokemonHoverAudio.currentTime = 0; // Reiniciar desde el principio
-
-                    const playPromise = pokemonHoverAudio.play();
-
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            isPlaying = true;
-                        }).catch(error => {
-                            console.log('Error al reproducir audio:', error);
+                        // Mantener estado real por eventos nativos
+                        audioEl.addEventListener('ended', () => {
+                            throttle = false;
+                        });
+                        audioEl.addEventListener('pause', () => {
+                            throttle = false;
                         });
                     }
 
-                    // Establecer timeout para permitir reproducir de nuevo
-                    audioTimeout = setTimeout(() => {
-                        isPlaying = false;
-                    }, 1000);
-                }
-            }
+                    // Hover/click
+                    const mainImageContainer = document.getElementById('mainImageContainer');
+                    bindHoverSound(mainImageContainer);
 
-            // Función para detener el sonido del Pokémon
-            function stopPokemonSound() {
-                if (pokemonHoverAudio && isPlaying) {
-                    pokemonHoverAudio.pause();
-                    isPlaying = false;
-                }
-            }
+                    document.querySelectorAll('.animated-sprites img, .sprite-item img')
+                            .forEach(el => {
+                                el.style.cursor = 'pointer';
+                                bindHoverSound(el);
+                                el.addEventListener('click', () => changeMainImage(el.src));
+                            });
 
-            // Función para inicializar animaciones adicionales
-            function initializeAnimations() {
-                // Animación de entrada para las secciones
-                const sections = document.querySelectorAll('.section');
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.style.animationDelay = Math.random() * 0.3 + 's';
-                            entry.target.classList.add('animate-in');
-                        }
+                    // Animaciones de entrada
+                    initSectionObserver();
+
+                    // Partículas y keyframes solo si existe el hero
+                    const hero = document.querySelector('.pokemon-hero');
+                    if (hero) {
+                        injectOnce('particle-keyframes', particleKeyframesCSS());
+                        createParticles(hero, 20);
+                    }
+
+                    // Gradiente de fondo con requestAnimationFrame
+                    animateBackgroundGradient();
+
+                    // Manejo de errores de imágenes
+                    document.querySelectorAll('img').forEach(img => {
+                        img.addEventListener('error', function () {
+                            this.style.opacity = '0.5';
+                            this.alt = 'Imagen no disponible';
+                        });
                     });
-                }, {
-                    threshold: 0.1,
-                    rootMargin: '50px'
+
+                    // Accesibilidad
+                    improveA11y();
                 });
 
-                sections.forEach(section => {
-                    observer.observe(section);
-                });
-
-                // Efecto de partículas en el hero
-                createParticles();
-
-                // Animación del gradiente de fondo
-                animateBackgroundGradient();
-            }
-
-            // Función para crear partículas flotantes
-            function createParticles() {
-                const hero = document.querySelector('.pokemon-hero');
-                const particleCount = 20;
-
-                for (let i = 0; i < particleCount; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle';
-                    particle.style.cssText = `
-                        position: absolute;
-                        width: ${Math.random() * 6 + 2}px;
-                        height: ${Math.random() * 6 + 2}px;
-                        background: rgba(255, 255, 255, ${Math.random() * 0.5 + 0.1});
-                        border-radius: 50%;
-                        left: ${Math.random() * 100}%;
-                        top: ${Math.random() * 100}%;
-                        pointer-events: none;
-                        animation: floatParticle ${Math.random() * 10 + 10}s infinite linear;
-                        animation-delay: ${Math.random() * 5}s;
-                        z-index: 0;
-                    `;
-                    hero.appendChild(particle);
+                function bindHoverSound(el) {
+                    if (!el || !audioEl)
+                        return;
+                    el.addEventListener('mouseenter', tryPlayOnce);
+                    el.addEventListener('mouseleave', () => {
+                        if (!audioEl.paused)
+                            audioEl.pause();
+                    });
                 }
 
-                // Agregar keyframes para las partículas
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes floatParticle {
-                        0% {
-                            transform: translateY(100vh) rotate(0deg);
-                            opacity: 0;
-                        }
-                        10% {
-                            opacity: 1;
-                        }
-                        90% {
-                            opacity: 1;
-                        }
-                        100% {
-                            transform: translateY(-100px) rotate(360deg);
-                            opacity: 0;
-                        }
-                    }
-                    
-                    .animate-in {
-                        animation: slideInUp 0.6s ease-out forwards;
-                    }
-                    
-                    @keyframes slideInUp {
-                        from {
-                            opacity: 0;
-                            transform: translateY(30px);
-                        }
-                        to {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-
-            // Función para animar el gradiente de fondo
-            function animateBackgroundGradient() {
-                const container = document.querySelector('.pokemon-detail-container');
-                let hue = 0;
-
-                setInterval(() => {
-                    hue = (hue + 0.5) % 360;
-                    const color1 = `hsl(${hue}, 70%, 60%)`;
-                    const color2 = `hsl(${(hue + 60) % 360}, 70%, 50%)`;
-
-                    container.style.background = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
-                }, 100);
-            }
-
-            // Función para manejar el cambio de imagen principal
-            function changeMainImage(newSrc, element) {
-                const mainImage = document.querySelector('.pokemon-main-image');
-                const container = document.getElementById('mainImageContainer');
-
-                // Agregar efecto de transición
-                container.style.transform = 'scale(0.9)';
-                container.style.opacity = '0.7';
-
-                setTimeout(() => {
-                    mainImage.src = newSrc;
-                    container.style.transform = 'scale(1)';
-                    container.style.opacity = '1';
-                }, 200);
-
-                // Reproducir sonido al cambiar imagen
-                playPokemonSound();
-            }
-
-            // Agregar funcionalidad de clic a los sprites para cambiar imagen principal
-            document.addEventListener('DOMContentLoaded', function () {
-                const spriteImages = document.querySelectorAll('.sprite-item img, .animated-sprites img');
-
-                spriteImages.forEach(sprite => {
-                    sprite.addEventListener('click', function () {
-                        const newSrc = this.src;
-                        changeMainImage(newSrc, this);
-
-                        // Agregar efecto visual al sprite clickeado
-                        this.style.transform = 'scale(1.2)';
+                function tryPlayOnce() {
+                    if (!audioEl || !userActivated || throttle)
+                        return;
+                    throttle = true;
+                    audioEl.currentTime = 0;
+                    const p = audioEl.play();
+                    if (p && typeof p.then === 'function') {
+                        p.then(() => setTimeout(() => {
+                                throttle = false;
+                            }, 900))
+                                .catch(() => {
+                                    throttle = false;
+                                }); // bloqueo por políticas
+                    } else {
                         setTimeout(() => {
-                            this.style.transform = '';
-                        }, 300);
-                    });
-
-                    // Agregar cursor pointer
-                    sprite.style.cursor = 'pointer';
-                });
-            });
-
-            // Función para copiar información del Pokémon
-            function copyPokemonInfo() {
-                const pokemonName = document.querySelector('.pokemon-info h1').textContent;
-                const pokemonId = document.querySelector('.pokemon-id').textContent;
-                const pokemonTypes = Array.from(document.querySelectorAll('.type-badge')).map(badge => badge.textContent).join(', ');
-
-                const info = `Pokémon: ${pokemonName}\nID: ${pokemonId}\nTipos: ${pokemonTypes}`;
-
-                navigator.clipboard.writeText(info).then(() => {
-                    showNotification('Información copiada al portapapeles');
-                }).catch(err => {
-                    console.error('Error al copiar:', err);
-                });
-            }
-
-            // Función para mostrar notificaciones
-            function showNotification(message) {
-                const notification = document.createElement('div');
-                notification.textContent = message;
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: rgba(0, 0, 0, 0.8);
-                    color: white;
-                    padding: 1rem 1.5rem;
-                    border-radius: 8px;
-                    z-index: 10000;
-                    animation: slideInNotification 0.3s ease;
-                `;
-
-                document.body.appendChild(notification);
-
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
-            }
-
-            // Agregar más estilos para las notificaciones
-            const notificationStyle = document.createElement('style');
-            notificationStyle.textContent = `
-                @keyframes slideInNotification {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
+                            throttle = false;
+                        }, 900);
                     }
                 }
-            `;
-            document.head.appendChild(notificationStyle);
 
-            // Manejo de errores para imágenes
-            document.addEventListener('DOMContentLoaded', function () {
-                const images = document.querySelectorAll('img');
+                function changeMainImage(src) {
+                    const img = document.querySelector('.pokemon-main-image');
+                    const box = document.getElementById('mainImageContainer');
+                    if (!img || !box || !src)
+                        return;
+                    box.style.transform = 'scale(0.9)';
+                    box.style.opacity = '0.7';
+                    setTimeout(() => {
+                        img.src = src;
+                        box.style.transform = 'scale(1)';
+                        box.style.opacity = '1';
+                    }, 180);
+                    tryPlayOnce();
+                }
 
-                images.forEach(img => {
-                    img.addEventListener('error', function () {
-                        this.style.opacity = '0.5';
-                        this.alt = 'Imagen no disponible';
-                        console.warn('Error cargando imagen:', this.src);
-                    });
-                });
-            });
+                function initSectionObserver() {
+                    injectOnce('slidein-keyframes', `
+      .section{opacity:0; transform:translateY(30px);}
+      .section.in{opacity:1; transform:translateY(0); transition:all .6s ease;}
+    `);
+                    const io = new IntersectionObserver(es => {
+                        es.forEach(e => {
+                            if (e.isIntersecting) {
+                                e.target.classList.add('in');
+                                io.unobserve(e.target);
+                            }
+                        });
+                    }, {threshold: 0.1, rootMargin: '50px'});
+                    document.querySelectorAll('.section').forEach(s => io.observe(s));
+                }
 
-            // Función para mejorar la accesibilidad
-            function improveAccessibility() {
-                // Agregar roles ARIA
-                const sections = document.querySelectorAll('.section');
-                sections.forEach((section, index) => {
-                    section.setAttribute('role', 'region');
-                    section.setAttribute('aria-labelledby', `section-title-${index}`);
-
-                    const title = section.querySelector('.section-title');
-                    if (title) {
-                        title.id = `section-title-${index}`;
+                function animateBackgroundGradient() {
+                    const el = document.querySelector('.pokemon-detail-container');
+                    if (!el)
+                        return;
+                    let hue = 0;
+                    function tick() {
+                        hue = (hue + 0.3) % 360;
+                        el.style.background = `linear-gradient(135deg, hsl(${hue},70%,60%) 0%, hsl(${(hue + 60) % 360},70%,50%) 100%)`;
+                        requestAnimationFrame(tick);
                     }
-                });
+                    requestAnimationFrame(tick);
+                }
 
-                // Mejorar navegación con teclado
-                const interactiveElements = document.querySelectorAll('.sprite-item img, .animated-sprites img, .back-button');
-                interactiveElements.forEach(element => {
-                    element.setAttribute('tabindex', '0');
+                function createParticles(hero, n) {
+                    for (let i = 0; i < n; i++) {
+                        const p = document.createElement('div');
+                        p.style.cssText = `
+        position:absolute; width:${Math.random() * 6 + 2}px; height:${Math.random() * 6 + 2}px;
+        background:rgba(255,255,255,${Math.random() * 0.5 + 0.1}); border-radius:50%;
+        left:${Math.random() * 100}%; top:${Math.random() * 100}%; pointer-events:none;
+        animation:floatParticle ${Math.random() * 10 + 10}s infinite linear ${Math.random() * 5}s; z-index:0;`;
+                        hero.appendChild(p);
+                    }
+                }
 
-                    element.addEventListener('keydown', function (e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            this.click();
+                function injectOnce(id, css) {
+                    if (document.getElementById(id))
+                        return;
+                    const s = document.createElement('style');
+                    s.id = id;
+                    s.textContent = css;
+                    document.head.appendChild(s);
+                }
+                function particleKeyframesCSS() {
+                    return `
+    @keyframes floatParticle {
+      0% { transform: translateY(100vh) rotate(0deg); opacity:0; }
+      10% { opacity:1; } 90% { opacity:1; }
+      100% { transform: translateY(-100px) rotate(360deg); opacity:0; }
+    }`;
+                }
+
+                function improveA11y() {
+                    document.querySelectorAll('.section').forEach((sec, i) => {
+                        sec.setAttribute('role', 'region');
+                        const h = sec.querySelector('.section-title');
+                        if (h) {
+                            const id = `section-title-${i}`;
+                            h.id = id;
+                            sec.setAttribute('aria-labelledby', id);
                         }
                     });
-                });
-            }
-
-            // Inicializar mejoras de accesibilidad
-            document.addEventListener('DOMContentLoaded', improveAccessibility);
+                    document.querySelectorAll('.sprite-item img, .animated-sprites img, .back-button')
+                            .forEach(el => {
+                                el.setAttribute('tabindex', '0');
+                                el.addEventListener('keydown', e => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        el.click();
+                                    }
+                                });
+                            });
+                }
+            })();
         </script>
-    </body>
+
+    </th:block>
+</body>
 </html>

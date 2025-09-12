@@ -442,10 +442,8 @@
 
                             <!-- Imagen principal: gif si existe -->
                             <div class="MiniaturaPrevia">
-                                <img th:src="${el.sprites.versions.generationV.blackWhite.animated.front_default != null ? 
-                                     el.sprites.versions.generationV.blackWhite.animated.front_default : 
-                                     el.sprites.other.officialArtwork.front_default}"
-                                     th:alt="${el.nombre}">
+                                <img th:if="${el.spriteUrl}" th:src="${el.spriteUrl}" th:alt="${el.nombre}">
+                                <span th:unless="${el.spriteUrl}" class="text-white-50">Sin imagen</span>
                             </div>
 
                             <!-- Nombre + tipos -->
@@ -506,7 +504,7 @@
                 </div>
             </div>
         </div>
-
+    <th:block layout:fragment="scripts">
         <script>
             // Animación de entrada escalonada para las tarjetas
             document.addEventListener('DOMContentLoaded', function () {
@@ -540,5 +538,6 @@
                 }, 1000);
             });
         </script>
-    </body>
+    </th:block>
+</body>
 </html>
