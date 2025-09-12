@@ -284,6 +284,108 @@
                     transform: translateY(0);
                 }
             }
+            .dropdown-tipos {
+                width: 220px;
+                position: relative;
+                font-size: 0.875rem;
+            }
+
+            .dropdown-toggle-tipos {
+                background: rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 12px;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .dropdown-list-tipos {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                max-height: 180px;
+                overflow-y: auto;
+                background: rgba(0,0,0,0.4);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 12px;
+                margin-top: 4px;
+                z-index: 100;
+                backdrop-filter: blur(10px);
+            }
+
+            .dropdown-item-tipo {
+                padding: 6px 12px;
+                cursor: pointer;
+            }
+
+            .dropdown-item-tipo:hover {
+                background: rgba(255,255,255,0.1);
+            }
+            .dropdown-list-tipos .dropdown-item-tipo {
+                color: #fff; /* texto blanco */
+                background-color: transparent; /* fondo transparente */
+            }
+
+            .dropdown-list-tipos .dropdown-item-tipo.bg-primary {
+                background-color: #0d6efd !important; /* bootstrap primary azul */
+                color: #fff !important;
+            }
+
+            .dropdown-list-tipos .dropdown-item-tipo:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                color: #fff;
+            }
+            /* Dropdown de tamaño personalizado */
+            .dropdown-tamanio {
+                width: 120px;
+                position: relative;
+                font-size: 0.875rem;
+            }
+
+            .dropdown-toggle-tamanio {
+                background: rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 12px;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .dropdown-list-tamanio {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(0,0,0,0.4);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 12px;
+                margin-top: 4px;
+                z-index: 101;
+                backdrop-filter: blur(10px);
+            }
+
+            .dropdown-item-tamanio {
+                padding: 6px 12px;
+                cursor: pointer;
+                color: #fff;
+                background-color: transparent;
+            }
+
+            .dropdown-item-tamanio:hover {
+                background-color: rgba(255,255,255,0.1);
+            }
+
+            .dropdown-item-tamanio.selected {
+                background-color: #0d6efd;
+                color: #fff;
+            }
+
+
         </style>
     </head>
 
@@ -316,9 +418,14 @@
 
                         <div class="d-flex flex-column">
                             <label class="text-white small">Filtro por distintos tipos</label>
-                            <select id="SelectorTiposMultiples" class="form-select form-select-sm" multiple size="1" style="width:220px">
-                                <option th:each="t : ${types}" th:value="${t.name}" th:text="${t.name}"></option>
-                            </select>
+                            <div class="dropdown-tipos" id="DropdownTipos">
+                                <div class="dropdown-toggle-tipos text-white small">Seleccionar Tipo</div>
+                                <div class="dropdown-list-tipos">
+                                    <div class="dropdown-item-tipo text-white small" th:each="t : ${types}"
+                                         th:data-value="${t.name}" th:text="${t.name}"></div>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="d-flex flex-column">
