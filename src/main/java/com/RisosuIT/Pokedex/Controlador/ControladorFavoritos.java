@@ -39,7 +39,7 @@ public class ControladorFavoritos {
                     .collect(Collectors.toList());
             model.addAttribute("pokemons", lista);
         }
-        return "favoritos"; // templates/favoritos.html
+        return "favoritos";
     }
 
     // API JSON

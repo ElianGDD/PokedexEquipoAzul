@@ -6,32 +6,124 @@
         <title>Cargando Pokédex</title>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width,initial-scale=1"/>
+
         <style>
+            /* ===== Pokédex 2000s look ===== */
             :root{
-                --pokedex-red:#d32f2f;
-                --muted:#6b6b6b;
+                --pdx-red:#d62828;
+                --pdx-red-dark:#7d0d0d;
+                --pdx-bezel:#1f232b;
+                --pdx-lcd-1:#0e1912;
+                --pdx-lcd-2:#0a130f;
+                --pdx-green:#9ae66e;
+                --pdx-silver:#c9d1d9;
+                --radius:18px;
+                --shadow:0 12px 28px rgba(0,0,0,.35);
             }
 
             .center-vert {
-                min-height: 100vh;
+                min-height: calc(100vh - 120px);
                 display: flex;
-                flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                text-align: center;
+                padding: 24px;
             }
 
-            /* Pokéball animada */
+            /* Shell / Bezel / Screen */
+            .pdx-shell{
+                width:100%;
+                max-width:760px;
+                margin: 0 auto;
+                background:
+                    linear-gradient(180deg, rgba(255,255,255,.12), rgba(0,0,0,.18)) padding-box,
+                    linear-gradient(180deg, #ffdede, #5a0e0e) border-box;
+                border:2px solid transparent;
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                position:relative;
+            }
+            .pdx-shell::before,
+            .pdx-shell::after{
+                content:'';
+                position:absolute;
+                top:10px;
+                width:10px;
+                height:10px;
+                border-radius:50%;
+                background: radial-gradient(circle at 30% 30%, #fff, #aaa 40%, #333 70%);
+                box-shadow:0 0 0 2px rgba(0,0,0,.25);
+            }
+            .pdx-shell::before{
+                left:10px;
+            }
+            .pdx-shell::after{
+                right:10px;
+            }
+
+            .pdx-bezel{
+                background: linear-gradient(180deg, #3b404b, var(--pdx-bezel));
+                border:1px solid #0f1217;
+                border-radius: calc(var(--radius) - 6px);
+                padding:14px;
+            }
+
+            .pdx-screen{
+                background:
+                    repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 3px),
+                    linear-gradient(180deg, var(--pdx-lcd-1), var(--pdx-lcd-2) 60%, #07110a);
+                color:var(--pdx-green);
+                border:2px solid #0c2015;
+                border-radius:14px;
+                padding:22px 20px 26px;
+                font-family: 'VT323', monospace;
+                letter-spacing:.3px;
+                position:relative;
+            }
+
+            .pdx-topbar{
+                display:flex;
+                align-items:center;
+                justify-content:space-between;
+                gap:1rem;
+                margin-bottom:16px;
+            }
+            .pdx-title{
+                font-family:'Orbitron', sans-serif;
+                font-weight:800;
+                letter-spacing:.6px;
+                text-transform:uppercase;
+                color:var(--pdx-silver);
+                font-size:1.1rem;
+            }
+            .pdx-led{
+                display:inline-block;
+                width:12px;
+                height:12px;
+                border-radius:50%;
+                background: radial-gradient(circle at 30% 30%, #fff, #ff6b6b 40%, #a20000 70%);
+                box-shadow: 0 0 6px 2px #ff6b6b;
+                margin-left:.5rem;
+            }
+            .pdx-grill{
+                width:90px;
+                height:12px;
+                border-radius:8px;
+                background: repeating-linear-gradient(90deg, #000 0 6px, #333 6px 10px);
+                opacity:.35;
+                border:1px solid #0006;
+            }
+
+            /* Pokéball animada (centro) */
             .pokeball{
                 width:96px;
                 height:96px;
                 border-radius:50%;
                 position:relative;
                 background: linear-gradient(#fff,#f5f5f5);
-                overflow:visible;
-                margin-bottom:18px;
+                margin: 0 auto 18px auto;
                 transform-origin:center;
                 animation: bob 1.6s ease-in-out infinite;
+                box-shadow: 0 10px 18px rgba(0,0,0,.25);
             }
             .pokeball::before{
                 content:"";
@@ -64,8 +156,8 @@
                 background:#fff;
                 border-radius:50%;
                 border:4px solid #222;
+                box-shadow: inset 0 0 0 3px #fafafa;
             }
-
             @keyframes bob{
                 0%,100%{
                     transform: translateY(0);
@@ -75,27 +167,54 @@
                 }
             }
 
-            /* Barra de progreso */
+            /* Texto LCD */
+            .lcd-h{
+                text-align:center;
+                font-size:28px;
+                margin:0 0 10px 0;
+                color:#d6ffd0;
+                text-shadow: 0 0 6px rgba(154,230,110,.35);
+            }
+            .lcd-sub{
+                text-align:center;
+                color:#b6e9a2;
+                opacity:.9;
+                margin-bottom:16px;
+            }
+
+            /* Barra de progreso retro */
             .progress{
-                height:14px;
+                height:16px;
                 border-radius:999px;
-                background:#ececec;
+                background:#0b1d14;
                 overflow:hidden;
-                border:1px solid rgba(0,0,0,0.04);
+                border:1px solid #193e2c;
+                box-shadow: inset 0 0 0 2px #062012;
             }
             .progress-bar{
                 height:100%;
                 width:0%;
+                background:
+                    repeating-linear-gradient(90deg, rgba(154,230,110,.9) 0 12px, rgba(154,230,110,.55) 12px 18px),
+                    linear-gradient(90deg, #7adf47, #a8f57b);
+                box-shadow: 0 0 10px rgba(154,230,110,.35);
                 transition: width .35s ease;
-                background: linear-gradient(90deg,var(--pokedex-red),#e04b4b);
             }
-            .small-muted{
-                color:var(--muted);
-                font-size:.95rem;
+            .lcd-line{
+                text-align:center;
                 margin-top:8px;
+                color:#c9ffd2;
+                font-size:22px;
+            }
+            .lcd-hint{
+                text-align:center;
+                color:#9ad59a;
+                font-size:18px;
+                opacity:.9;
+                margin-top:2px;
             }
 
-            /* Animación de pokeballs cayendo */
+            /* Pokéballs cayendo (decorativo) */
             .pokeball-falling {
                 position: absolute;
                 top: -40px;
@@ -104,6 +223,7 @@
                 pointer-events: none;
                 user-select: none;
                 z-index: 0;
+                filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
             }
             @keyframes fall {
                 0% {
@@ -118,20 +238,32 @@
         </style>
     </head>
     <body>
-        <div class="container py-5" layout:fragment="body">
+        <div class="container" layout:fragment="body">
             <div class="center-vert">
-                <div class="pokeball" aria-hidden="true">
-                    <div class="button" aria-hidden="true"></div>
+                <div class="pdx-shell">
+                    <div class="pdx-bezel">
+                        <div class="pdx-screen">
+                            <div class="pdx-topbar">
+                                <div class="pdx-title">SYSTEM: POKÉDEX LOADER<span class="pdx-led" title="POWER"></span></div>
+                                <div class="pdx-grill" aria-hidden="true"></div>
+                            </div>
+
+                            <div class="pokeball" aria-hidden="true">
+                                <div class="button" aria-hidden="true"></div>
+                            </div>
+
+                            <h3 class="lcd-h">Cargando Pokédex</h3>
+                            <div class="lcd-sub">Inicializando módulos · Verificando sprites · Sincronizando datos</div>
+
+                            <div class="progress mx-auto" style="max-width:640px" aria-label="Progreso de carga">
+                                <div id="bar" class="progress-bar"></div>
+                            </div>
+
+                            <p id="txt" class="lcd-line">0 / 0</p>
+                            <p id="hint" class="lcd-hint">Inicializando…</p>
+                        </div>
+                    </div>
                 </div>
-
-                <h3 class="mb-2">Cargando Pokédex</h3>
-
-                <div class="progress w-75" style="max-width:640px" aria-label="Progreso de carga">
-                    <div id="bar" class="progress-bar"></div>
-                </div>
-
-                <p id="txt" class="small-muted">0 / 0</p>
-                <p id="hint" class="text-muted small">Inicializando…</p>
             </div>
         </div>
 
@@ -148,12 +280,12 @@
                     txt.textContent = `${loaded} / ${total}`;
                 }
 
-                // Lluvia de pokeballs
+                // Lluvia de pokeballs (decorativo)
                 function rainPokeballs(count = 5) {
                     for (let i = 0; i < count; i++) {
                         const el = document.createElement('div');
                         el.className = 'pokeball-falling';
-                        el.innerHTML = '<img src="https://www.clipartmax.com/png/middle/129-1298390_pokeball-transparent-png-pokeball-png-pokemon-go.png" style="width:32px;height:32px;" />';
+                        el.innerHTML = '<img src="https://www.clipartmax.com/png/middle/129-1298390_pokeball-transparent-png-pokeball-png-pokemon-go.png" style="width:32px;height:32px;" alt="Pokéball" />';
                         el.style.left = `${Math.random() * 100}vw`;
                         el.style.animationDuration = `${2 + Math.random() * 3}s`;
                         document.body.appendChild(el);
@@ -162,6 +294,7 @@
                 }
                 setInterval(() => rainPokeballs(3), 2000);
 
+                // Lógica de carga (sin cambios)
                 async function startAndPoll() {
                     try {
                         await fetch('/api/start-load', {method: 'POST'});
@@ -184,7 +317,7 @@
                                 return;
                             }
                         } catch (e) {
-                            // Ignorar un fallo puntual
+                            /* Ignorar un fallo puntual */
                         }
                         await new Promise(r => setTimeout(r, i < 8 ? 500 : 1000));
                     }

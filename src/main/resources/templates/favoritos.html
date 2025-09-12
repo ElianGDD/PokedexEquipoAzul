@@ -6,536 +6,338 @@
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width,initial-scale=1"/>
         <title>Pokédex — Favoritos</title>
+
+        <!-- Bootstrap + Icons (del layout) -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+        <!-- Retro fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=VT323&display=swap" rel="stylesheet"/>
 
         <style>
-            :root {
-                --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                --card-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                --card-shadow-hover: 0 20px 40px rgba(0,0,0,0.4);
-                --border-radius: 24px;
-                --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            :root{
+                --pdx-red:#d32f2f;
+                --pdx-red-dark:#9d1818;
+                --pdx-bezel:#141a22;
+                --lcd:#0c161e;
+                --lcd-glow:#7fffd4;
+                --ink:#0f1520;
+                --silver:#cfd7e2;
+                --accent:#ffd34d;
+                --shadow:0 18px 55px rgba(0,0,0,.35);
+                --radius:20px;
             }
 
-            body {
-                font-family: 'Poppins', sans-serif;
-                background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460);
-                min-height: 100vh;
+            body{
+                background: transparent;
+            }
+
+            /* ===== Carcasa Pokédex ===== */
+            .fav-shell{
+                max-width: 1200px;
+                margin: 0 auto;
                 position: relative;
-                overflow-x: hidden;
-            }
-
-            body::before {
-                content: '';
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%);
-                pointer-events: none;
-                z-index: -1;
-            }
-
-            .header-section {
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(20px);
-                border-radius: var(--border-radius);
-                padding: 2rem;
-                margin-bottom: 2rem;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                animation: slideInDown 0.6s ease;
-            }
-
-            .header-title {
-                font-size: 2.5rem;
-                font-weight: 700;
-                background: linear-gradient(45deg, #ffd700, #ffed4e);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                text-align: center;
-                margin: 0;
-                text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            }
-
-            .subtitle {
-                text-align: center;
-                color: rgba(255, 255, 255, 0.8);
-                margin-top: 0.5rem;
-                font-size: 1.1rem;
-            }
-
-            .GrillaTarjetas {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-                gap: 30px;
-                padding: 0 10px;
-            }
-
-            .TarjetaPokemon {
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(20px);
-                border-radius: var(--border-radius);
+                border-radius: calc(var(--radius) + 6px);
                 overflow: hidden;
-                color: #fff;
-                position: relative;
-                transition: var(--transition);
-                box-shadow: var(--card-shadow);
-                cursor: pointer;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                animation: fadeInUp 0.6s ease backwards;
+                box-shadow: var(--shadow);
+                border:3px solid transparent;
+                background:
+                    linear-gradient(180deg, rgba(255,255,255,.12), rgba(0,0,0,.18)) padding-box,
+                    linear-gradient(180deg, #ff9a9a, #7e0f0f) border-box;
+            }
+            .fav-shell::before{
+                content:'';
+                position:absolute;
+                inset:0;
+                background: linear-gradient(180deg, var(--pdx-red) 0%, var(--pdx-red-dark) 100%);
+                z-index:-1;
+            }
+            .screw{
+                position:absolute;
+                width:14px;
+                height:14px;
+                border-radius:50%;
+                background: radial-gradient(circle at 30% 30%, #e9eef5 0 40%, #8a96a4 60%, #515a66 100%);
+                box-shadow: inset 0 0 0 2px rgba(0,0,0,.25), 0 2px 4px rgba(0,0,0,.4);
+                z-index:2;
+            }
+            .s1{
+                top:10px;
+                left:10px;
+            }
+            .s2{
+                top:10px;
+                right:10px;
+            }
+            .s3{
+                bottom:10px;
+                left:10px;
+            }
+            .s4{
+                bottom:10px;
+                right:10px;
             }
 
-            .TarjetaPokemon:hover {
-                transform: translateY(-12px) scale(1.02);
-                box-shadow: var(--card-shadow-hover);
+            /* ===== Cabecera “LCD” ===== */
+            .fav-header{
+                background: var(--pdx-bezel);
+                padding: 22px 26px;
+                border-bottom: 3px solid rgba(0,0,0,.35);
+                position:relative;
+            }
+            .fav-header::after{
+                content:'';
+                position:absolute;
+                top:18px;
+                left:20px;
+                width:12px;
+                height:12px;
+                border-radius:50%;
+                background: radial-gradient(circle at 30% 30%, #fff, #ffa 40%, #f33 70%);
+                box-shadow: 0 0 8px #ff5353, 0 0 20px rgba(255,83,83,.6);
+            }
+            .fav-title{
+                display:flex;
+                align-items:center;
+                gap:.9rem;
+                margin:0;
+                font: 800 1.35rem/1 'Orbitron', system-ui;
+                letter-spacing:.6px;
+                color:#e9f7ff;
+            }
+            .fav-lcd{
+                margin-top:12px;
+                border-radius:14px;
+                padding: 12px 14px;
+                background:
+                    linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.35)),
+                    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px),
+                    linear-gradient(180deg, var(--lcd), #081018);
+                border:2px solid #0e2a38;
+                box-shadow: inset 0 0 0 2px rgba(255,255,255,.06), inset 0 0 30px rgba(127,255,212,.10);
+                color:#cfefff;
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                font: 700 1rem/1 'VT323', monospace;
             }
 
-            .TarjetaPokemon:hover .MiniaturaPrevia img {
-                transform: scale(1.1) rotate(5deg);
+            /* ===== Estado vacío ===== */
+            .fav-empty{
+                margin: 18px;
+                border-radius:14px;
+                padding:20px;
+                background: linear-gradient(180deg, #f5f7fb, #e8edf4);
+                border:1px solid rgba(0,0,0,.08);
+                text-align:center;
+                color:#223044;
+                box-shadow: 0 12px 26px rgba(0,0,0,.12), inset 0 0 0 2px rgba(255,255,255,.7);
             }
 
-            .pokemon-card-bg {
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                opacity: 0.8;
-                z-index: 1;
+            /* ===== Grid de tarjetas ===== */
+            .fav-grid{
+                padding: 18px;
+                display:grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap:16px;
+                background: linear-gradient(180deg, rgba(0,0,0,.16), rgba(0,0,0,.28));
             }
 
-            .card-content {
-                position: relative;
-                z-index: 2;
+            /* Tarjeta módulo */
+            .fav-card{
+                position:relative;
+                display:flex;
+                gap:12px;
+                align-items:center;
+                padding:12px;
+                border-radius:14px;
+                background: linear-gradient(180deg, #eef3f9, #e6ecf4);
+                border:1px solid rgba(0,0,0,.06);
+                box-shadow: 0 10px 22px rgba(0,0,0,.12), inset 0 0 0 2px rgba(255,255,255,.7);
+                transition: transform .2s ease, box-shadow .2s ease;
+                min-height: 110px;
+            }
+            .fav-card:hover{
+                transform: translateY(-4px);
+                box-shadow: 0 16px 30px rgba(0,0,0,.18), inset 0 0 0 2px rgba(255,255,255,.7);
             }
 
-            .favorite-star {
-                position: absolute;
-                top: 15px;
-                right: 15px;
-                z-index: 3;
-                background: rgba(255, 255, 255, 0.2);
-                backdrop-filter: blur(10px);
-                border-radius: 50%;
-                width: 45px;
-                height: 45px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                animation: pulse 2s infinite;
+            .fav-imgbox{
+                width:96px;
+                height:96px;
+                border-radius:12px;
+                background: radial-gradient(80px 80px at 50% 55%, rgba(0,0,0,.06), transparent 60%);
+                display:grid;
+                place-items:center;
+                overflow:hidden;
+                border:1px solid rgba(0,0,0,.06);
+            }
+            .fav-imgbox img{
+                width:96px;
+                height:96px;
+                object-fit:contain;
+                filter: drop-shadow(0 6px 12px rgba(0,0,0,.18));
             }
 
-            .MiniaturaPrevia {
-                height: 220px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: rgba(255, 255, 255, 0.1);
-                position: relative;
-                overflow: hidden;
+            .fav-data{
+                min-width:0;
+                flex:1;
+            }
+            .fav-name{
+                margin:0;
+                font:800 1rem 'Orbitron', system-ui;
+                color:#1b2430;
+                text-transform:capitalize;
+            }
+            .fav-id{
+                margin:2px 0 6px;
+                font:700 .95rem 'VT323', monospace;
+                color:#3a4a5e;
+            }
+            .fav-types{
+                display:flex;
+                flex-wrap:wrap;
+                gap:6px;
+            }
+            .fav-type{
+                padding:.25rem .55rem;
+                border-radius:999px;
+                font:700 .75rem 'Orbitron', system-ui;
+                text-transform:capitalize;
+                background: linear-gradient(180deg, #f7f7f7, #d9dee5);
+                border:1px solid #8a95a6;
+                color:#0c1116;
             }
 
-            .MiniaturaPrevia::before {
-                content: '';
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                width: 200px;
-                height: 200px;
-                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-                border-radius: 50%;
-                transform: translate(-50%, -50%);
+            .fav-actions{
+                display:flex;
+                flex-direction:column;
+                gap:6px;
+                min-width:112px;
+            }
+            .btn-cta{
+                display:inline-flex;
+                align-items:center;
+                gap:.4rem;
+                justify-content:center;
+                padding:.45rem .7rem;
+                border-radius:10px;
+                text-decoration:none;
+                background: linear-gradient(180deg, #2f3647, #1d2330);
+                color:#fff;
+                border:1px solid rgba(0,0,0,.25);
+            }
+            .btn-cta:hover{
+                filter: brightness(1.05);
+            }
+            .btn-ghost{
+                display:inline-flex;
+                align-items:center;
+                gap:.4rem;
+                justify-content:center;
+                padding:.4rem .7rem;
+                border-radius:10px;
+                background:#fff;
+                border:1px dashed #be2c2c;
+                color:#be2c2c;
+            }
+            .btn-ghost:hover{
+                background:#ffe9e9;
             }
 
-            .MiniaturaPrevia img {
-                max-height: 160px;
-                max-width: 160px;
-                object-fit: contain;
-                filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
-                transition: var(--transition);
-                position: relative;
-                z-index: 2;
-            }
-
-            .MetadatosPokemon {
-                padding: 20px;
-                background: rgba(0, 0, 0, 0.2);
-                backdrop-filter: blur(10px);
-            }
-
-            .pokemon-name {
-                font-size: 1.5rem;
-                font-weight: 700;
-                margin: 0 0 5px 0;
-                text-transform: capitalize;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            }
-
-            .pokemon-id {
-                font-size: 0.95rem;
-                opacity: 0.9;
-                font-weight: 500;
-            }
-
-            .BadgeTipo {
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-size: 0.8rem;
-                margin: 2px;
-                text-transform: capitalize;
-                color: #fff;
-                font-weight: 600;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                backdrop-filter: blur(10px);
-                transition: var(--transition);
-            }
-
-            .BadgeTipo:hover {
-                transform: scale(1.05);
-            }
-
-            .extra-info {
-                background: rgba(0, 0, 0, 0.3);
-                backdrop-filter: blur(10px);
-                padding: 20px;
-                font-size: 0.9rem;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .info-row {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 8px;
-                padding: 4px 0;
-            }
-
-            .info-label {
-                font-weight: 600;
-                opacity: 0.9;
-            }
-
-            .info-value {
-                font-weight: 500;
-            }
-
-            .abilities-section {
-                margin-top: 15px;
-                padding-top: 15px;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .ability-badge {
-                display: inline-block;
-                padding: 4px 10px;
-                margin: 2px;
-                border-radius: 12px;
-                font-size: 0.75rem;
-                font-weight: 500;
-                background: rgba(255, 255, 255, 0.2);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                text-transform: capitalize;
-            }
-
-            .stats-section {
-                margin-top: 15px;
-                padding-top: 15px;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .stat-item {
-                margin-bottom: 10px;
-            }
-
-            .stat-header {
-                display: flex;
-                justify-content: between;
-                align-items: center;
-                margin-bottom: 4px;
-            }
-
-            .stat-name {
-                font-size: 0.8rem;
-                text-transform: capitalize;
-                font-weight: 500;
-                flex: 1;
-            }
-
-            .stat-value {
-                font-size: 0.8rem;
-                font-weight: 600;
-                min-width: 35px;
-                text-align: right;
-            }
-
-            .stat-bar {
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 10px;
-                overflow: hidden;
-                height: 6px;
-                position: relative;
-            }
-
-            .stat-bar-fill {
-                height: 100%;
-                background: linear-gradient(90deg, #ffd700, #ffed4e);
-                border-radius: 10px;
-                transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-                position: relative;
-                overflow: hidden;
-            }
-
-            .stat-bar-fill::after {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: -100%;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-                animation: shimmer 2s infinite;
-            }
-
-            .no-results {
-                grid-column: 1 / -1;
-                text-align: center;
-                padding: 4rem 2rem;
-                background: rgba(255, 255, 255, 0.05);
-                backdrop-filter: blur(20px);
-                border-radius: var(--border-radius);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .no-results i {
-                font-size: 4rem;
-                opacity: 0.6;
-                margin-bottom: 1rem;
-            }
-
-            .no-results-text {
-                font-size: 1.2rem;
-                opacity: 0.8;
-                margin-bottom: 1rem;
-            }
-
-            .no-results-subtitle {
-                opacity: 0.6;
-                font-size: 0.95rem;
-            }
-
-            /* Animaciones */
-            @keyframes slideInDown {
-                from {
-                    transform: translateY(-30px);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateY(0);
-                    opacity: 1;
-                }
-            }
-
-            @keyframes fadeInUp {
-                from {
-                    transform: translateY(30px);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateY(0);
-                    opacity: 1;
-                }
-            }
-
-            @keyframes pulse {
-                0%, 100% {
-                    transform: scale(1);
-                }
-                50% {
-                    transform: scale(1.1);
-                }
-            }
-
-            @keyframes shimmer {
-                0% {
-                    left: -100%;
-                }
-                100% {
-                    left: 100%;
-                }
-            }
-
-            /* Stagger animation for cards */
-            .TarjetaPokemon:nth-child(1) {
-                animation-delay: 0.1s;
-            }
-            .TarjetaPokemon:nth-child(2) {
-                animation-delay: 0.2s;
-            }
-            .TarjetaPokemon:nth-child(3) {
-                animation-delay: 0.3s;
-            }
-            .TarjetaPokemon:nth-child(4) {
-                animation-delay: 0.4s;
-            }
-            .TarjetaPokemon:nth-child(5) {
-                animation-delay: 0.5s;
-            }
-            .TarjetaPokemon:nth-child(6) {
-                animation-delay: 0.6s;
-            }
-
-            /* Responsive */
-            @media (max-width: 768px) {
-                .GrillaTarjetas {
-                    grid-template-columns: 1fr;
-                    gap: 20px;
-                    padding: 0 5px;
-                }
-
-                .header-title {
-                    font-size: 2rem;
-                }
-
-                .header-section {
-                    padding: 1.5rem;
+            /* Responsive acciones en fila */
+            @media (max-width:380px){
+                .fav-actions{
+                    flex-direction:row;
                 }
             }
         </style>
     </head>
+
     <body layout:fragment="body">
         <div class="container py-4">
-            <div class="header-section">
-                <h1 class="header-title">
-                    <i class="bi bi-star-fill me-3"></i>
-                    Mis Pokémon Favoritos
-                </h1>
-                <p class="subtitle">Tu colección personal de criaturas legendarias</p>
-            </div>
+            <!-- SHELL -->
+            <div class="fav-shell">
+                <i class="screw s1"></i><i class="screw s2"></i><i class="screw s3"></i><i class="screw s4"></i>
 
-            <div class="GrillaTarjetas">
-                <!-- Si no hay favoritos -->
-                <div th:if="${#lists.isEmpty(pokemons)}" class="no-results">
-                    <i class="bi bi-heart-break"></i>
-                    <div class="no-results-text">¡Aún no tienes favoritos!</div>
-                    <div class="no-results-subtitle">Explora el Pokédex y marca tus Pokémon favoritos con una estrella</div>
+                <!-- Header LCD -->
+                <div class="fav-header">
+                    <h1 class="fav-title">
+                        <i class="bi bi-star-fill text-warning"></i> Mis Pokémon favoritos
+                    </h1>
+                    <div class="fav-lcd">
+                        <span><i class="bi bi-collection me-1"></i> Total: <strong th:text="${#lists.size(pokemons)}">0</strong></span>
+                        <span><i class="bi bi-info-circle me-1"></i> Usa “Ver” para abrir el perfil o “Quitar” para eliminar</span>
+                    </div>
                 </div>
 
-                <!-- Tarjetas -->
-                <div th:each="el : ${pokemons}" class="ElementoTarjeta">
-                    <div class="TarjetaPokemon"
-                         th:onclick="'window.location.href=\'/pokemon/'+${el.id}+'\''">
+                <!-- Estado vacío -->
+                <div class="fav-empty" th:if="${#lists.isEmpty(pokemons)}">
+                    <div class="mb-1"><i class="bi bi-heartbreak"></i></div>
+                    <div class="fw-bold">Aún no tienes favoritos.</div>
+                    <div class="small">Ve al explorador y marca algunos con la estrella.</div>
+                </div>
 
-                        <!-- Fondo con gradiente -->
-                        <div class="pokemon-card-bg"
-                             th:style="'background:linear-gradient(135deg,'+${el.colorPrimario}+','+${el.colorSecundario}+');'"></div>
+                <!-- Grid de favoritos -->
+                <div class="fav-grid" th:if="${!#lists.isEmpty(pokemons)}">
+                    <div th:each="el : ${pokemons}" class="fav-card">
+                        <!-- Imagen con fallback -->
+                        <div class="fav-imgbox"
+                             th:with="imgUrl=${el.spriteUrl != null and el.spriteUrl != '' ? el.spriteUrl :
+                             (el.sprites != null and el.sprites.other != null and el.sprites.other.officialArtwork != null
+                             and el.sprites.other.officialArtwork.front_default != null
+                             ? el.sprites.other.officialArtwork.front_default : null)}">
+                            <img th:if="${imgUrl != null}" th:src="${imgUrl}" th:alt="${el.nombre}">
+                            <span th:if="${imgUrl == null}" class="text-muted small">Sin imagen</span>
+                        </div>
 
-                        <div class="card-content">
-                            <!-- Estrella fija -->
-                            <div class="favorite-star">
-                                <i class="bi bi-star-fill text-warning fs-5"></i>
-                            </div>
-
-                            <!-- Imagen principal: gif si existe -->
-                            <div class="MiniaturaPrevia">
-                                <img th:if="${el.spriteUrl}" th:src="${el.spriteUrl}" th:alt="${el.nombre}">
-                                <span th:unless="${el.spriteUrl}" class="text-white-50">Sin imagen</span>
-                            </div>
-
-                            <!-- Nombre + tipos -->
-                            <div class="MetadatosPokemon">
-                                <div>
-                                    <h3 class="pokemon-name" th:text="${el.nombre}"></h3>
-                                    <div class="pokemon-id" th:text="'#'+${el.id}"></div>
-                                </div>
-                                <div class="text-end">
-                                    <span th:each="tipo : ${el.tipos}" 
-                                          class="BadgeTipo"
-                                          th:style="'background:'+${el.coloresTipos[tipo]}"
-                                          th:text="${tipo}"></span>
-                                </div>
-                            </div>
-
-                            <!-- Extra info -->
-                            <div class="extra-info">
-                                <div class="info-row">
-                                    <span class="info-label">Altura:</span>
-                                    <span class="info-value" th:text="${el.height} + ' dm'"></span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Peso:</span>
-                                    <span class="info-value" th:text="${el.weight} + ' hg'"></span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Experiencia base:</span>
-                                    <span class="info-value" th:text="${el.base_experience}"></span>
-                                </div>
-
-                                <div class="abilities-section">
-                                    <div class="info-label mb-2">Habilidades:</div>
-                                    <div>
-                                        <span th:each="hab : ${el.abilities}" 
-                                              class="ability-badge"
-                                              th:text="${hab.ability.name}"></span>
-                                    </div>
-                                </div>
-
-                                <div class="stats-section">
-                                    <div class="info-label mb-3">Estadísticas:</div>
-                                    <div th:each="st : ${el.stats}" class="stat-item">
-                                        <div class="stat-header">
-                                            <span class="stat-name" th:text="${st.stat.name}"></span>
-                                            <span class="stat-value" th:text="${st.base_stat}"></span>
-                                        </div>
-                                        <div class="stat-bar">
-                                            <div class="stat-bar-fill" 
-                                                 th:style="'width: ' + (${st.base_stat} > 200 ? 100 : ${st.base_stat} / 2) + '%;'"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- Datos -->
+                        <div class="fav-data">
+                            <h5 class="fav-name" th:text="${el.nombre}">Nombre</h5>
+                            <div class="fav-id">#<span th:text="${el.id}">0</span></div>
+                            <div class="fav-types">
+                                <span th:each="t : ${el.tipos}" class="fav-type" th:text="${t}">tipo</span>
                             </div>
                         </div>
 
+                        <!-- Acciones -->
+                        <div class="fav-actions">
+                            <a th:href="@{|/pokemon/${el.id}|}" class="btn-cta">
+                                <i class="bi bi-box-arrow-up-right"></i> Ver
+                            </a>
+
+                            <!-- Quitar de favoritos (POST) -->
+                            <form class="js-remove" th:attr="data-id=${el.id}">
+                                <button type="submit" class="btn-ghost">
+                                    <i class="bi bi-trash"></i> Quitar
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
+            <!-- /SHELL -->
         </div>
+
     <th:block layout:fragment="scripts">
         <script>
-            // Animación de entrada escalonada para las tarjetas
-            document.addEventListener('DOMContentLoaded', function () {
-                const cards = document.querySelectorAll('.TarjetaPokemon');
-
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.style.animationPlayState = 'running';
-                        }
+            // Mantener lógica: quitar favorito vía POST y recargar.
+            document.addEventListener('click', async (e) => {
+                const form = e.target.closest('form.js-remove');
+                if (!form)
+                    return;
+                e.preventDefault();
+                const id = form.getAttribute('data-id');
+                try {
+                    const r = await fetch(`/api/favoritos/remove/${id}`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
                     });
-                }, {
-                    threshold: 0.1,
-                    rootMargin: '0px 0px -50px 0px'
-                });
-
-                cards.forEach(card => {
-                    observer.observe(card);
-                });
-
-                // Animación suave para las barras de stats
-                setTimeout(() => {
-                    const statBars = document.querySelectorAll('.stat-bar-fill');
-                    statBars.forEach(bar => {
-                        const width = bar.style.width;
-                        bar.style.width = '0%';
-                        setTimeout(() => {
-                            bar.style.width = width;
-                        }, 500);
-                    });
-                }, 1000);
+                    if (r.ok)
+                        location.reload();
+                } catch (_) {
+                }
             });
         </script>
     </th:block>
