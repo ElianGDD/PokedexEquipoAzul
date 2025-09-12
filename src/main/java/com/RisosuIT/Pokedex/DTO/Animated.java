@@ -1,92 +1,45 @@
 package com.RisosuIT.Pokedex.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Animated {
 
-    private String backDefault;
-    private String backFemale;
-    private String backShiny;
-    private String backShinyFemale;
-    private String frontDefault;
-    private String frontFemale;
-    private String frontShiny;
-    private String frontShinyFemale;
+    private String front_default;
+    private String back_default;
+    private String front_shiny;
+    private String back_shiny;
 
-    public Animated() {
+    public String getFront_default() {
+        return front_default;
     }
 
-    public Animated(String backDefault, String backFemale, String backShiny, String backShinyFemale,
-            String frontDefault, String frontFemale, String frontShiny, String frontShinyFemale) {
-        this.backDefault = backDefault;
-        this.backFemale = backFemale;
-        this.backShiny = backShiny;
-        this.backShinyFemale = backShinyFemale;
-        this.frontDefault = frontDefault;
-        this.frontFemale = frontFemale;
-        this.frontShiny = frontShiny;
-        this.frontShinyFemale = frontShinyFemale;
+    public void setFront_default(String front_default) {
+        this.front_default = front_default;
     }
 
-    public String getBackDefault() {
-        return backDefault;
+    public String getBack_default() {
+        return back_default;
     }
 
-    public void setBackDefault(String backDefault) {
-        this.backDefault = backDefault;
+    public void setBack_default(String back_default) {
+        this.back_default = back_default;
     }
 
-    public String getBackFemale() {
-        return backFemale;
+    public String getFront_shiny() {
+        return front_shiny;
     }
 
-    public void setBackFemale(String backFemale) {
-        this.backFemale = backFemale;
+    public void setFront_shiny(String front_shiny) {
+        this.front_shiny = front_shiny;
     }
 
-    public String getBackShiny() {
-        return backShiny;
+    public String getBack_shiny() {
+        return back_shiny;
     }
 
-    public void setBackShiny(String backShiny) {
-        this.backShiny = backShiny;
+    public void setBack_shiny(String back_shiny) {
+        this.back_shiny = back_shiny;
     }
 
-    public String getBackShinyFemale() {
-        return backShinyFemale;
-    }
-
-    public void setBackShinyFemale(String backShinyFemale) {
-        this.backShinyFemale = backShinyFemale;
-    }
-
-    public String getFrontDefault() {
-        return frontDefault;
-    }
-
-    public void setFrontDefault(String frontDefault) {
-        this.frontDefault = frontDefault;
-    }
-
-    public String getFrontFemale() {
-        return frontFemale;
-    }
-
-    public void setFrontFemale(String frontFemale) {
-        this.frontFemale = frontFemale;
-    }
-
-    public String getFrontShiny() {
-        return frontShiny;
-    }
-
-    public void setFrontShiny(String frontShiny) {
-        this.frontShiny = frontShiny;
-    }
-
-    public String getFrontShinyFemale() {
-        return frontShinyFemale;
-    }
-
-    public void setFrontShinyFemale(String frontShinyFemale) {
-        this.frontShinyFemale = frontShinyFemale;
-    }
 }

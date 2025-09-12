@@ -1,21 +1,11 @@
 package com.RisosuIT.Pokedex.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class GenerationV {
 
+    @JsonProperty("black-white")
     private BlackWhite blackWhite;
-
-    public GenerationV() {
-    }
-
-    public GenerationV(BlackWhite blackWhite) {
-        this.blackWhite = blackWhite;
-    }
-
-    public BlackWhite getBlackWhite() {
-        return blackWhite;
-    }
-
-    public void setBlackWhite(BlackWhite blackWhite) {
-        this.blackWhite = blackWhite;
-    }
 }

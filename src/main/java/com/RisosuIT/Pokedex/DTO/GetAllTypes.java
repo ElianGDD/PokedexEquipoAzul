@@ -40,6 +40,5 @@ public class GetAllTypes {
     public void setResults(List<NamedAPIResource> results) {
         this.results = results;
     }
-    
-    
+
 }

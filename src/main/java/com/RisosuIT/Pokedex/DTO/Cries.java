@@ -1,17 +1,12 @@
 package com.RisosuIT.Pokedex.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Cries {
 
     private String latest;
     private String legacy;
-
-    public Cries() {
-    }
-
-    public Cries(String latest, String legacy) {
-        this.latest = latest;
-        this.legacy = legacy;
-    }
 
     public String getLatest() {
         return latest;

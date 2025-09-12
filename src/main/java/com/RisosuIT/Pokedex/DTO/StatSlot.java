@@ -1,19 +1,13 @@
 package com.RisosuIT.Pokedex.DTO;
 
-public class Stats {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class StatSlot {
 
     private int base_stat;
     private int effort;
-    private Stat stat;
-
-    public Stats() {
-    }
-
-    public Stats(int base_stat, int effort, Stat stat) {
-        this.base_stat = base_stat;
-        this.effort = effort;
-        this.stat = stat;
-    }
+    private NamedAPIResource stat;
 
     public int getBase_stat() {
         return base_stat;
@@ -31,11 +25,11 @@ public class Stats {
         this.effort = effort;
     }
 
-    public Stat getStat() {
+    public NamedAPIResource getStat() {
         return stat;
     }
 
-    public void setStat(Stat stat) {
+    public void setStat(NamedAPIResource stat) {
         this.stat = stat;
     }
 

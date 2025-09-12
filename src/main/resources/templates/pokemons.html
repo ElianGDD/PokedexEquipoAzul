@@ -183,51 +183,81 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             $(function () {
-                const $Contenedor = $('#ContenedorTarjetas');
-                const $CampoBusqueda = $('#CampoBusqueda');
-                const $SelectorTiposMultiples = $('#SelectorTiposMultiples');
-                const $TamanoPagina = $('#TamanoPagina');
-                const $BotonAnterior = $('#BotonAnterior');
-                const $BotonSiguiente = $('#BotonSiguiente');
-                const $InformacionTotal = $('#InformacionTotal');
-                const $InformacionPagina = $('#InformacionPagina');
-                const $EstadoCarga = $('#EstadoCarga');
+            const $Contenedor = $('#ContenedorTarjetas');
+                    const $CampoBusqueda = $('#CampoBusqueda');
+                    const $SelectorTiposMultiples = $('#SelectorTiposMultiples');
+                    const $TamanoPagina = $('#TamanoPagina');
+                    const $BotonAnterior = $('#BotonAnterior');
+                    const $BotonSiguiente = $('#BotonSiguiente');
+                    const $InformacionTotal = $('#InformacionTotal');
+                    const $InformacionPagina = $('#InformacionPagina');
+                    const $EstadoCarga = $('#EstadoCarga');
+                    let estado = {nombre: '', tipos: [], pagina: 0, tamanio: parseInt($TamanoPagina.val(), 10)};
+                    let timeoutBusqueda;
+                    let favoritos = new Set(); // IDs de pokémon favoritos en sesión
 
-                let estado = {nombre: '', tipos: [], pagina: 0, tamanio: parseInt($TamanoPagina.val(), 10)};
-                let timeoutBusqueda;
-
-                async function cargarPokemons() {
-                    $EstadoCarga.text('cargando...');
+                    async function cargarFavoritos() {
                     try {
-                        const params = {nombre: estado.nombre, pagina: estado.pagina, tamanio: estado.tamanio};
-                        if (estado.tipos.length > 0)
-                            params['tipos'] = estado.tipos;
-
-                        const resp = await $.ajax({url: '/api/pokemons', method: 'GET', traditional: true, data: params});
-                        renderPokemons(resp);
-                        $EstadoCarga.text('listo');
+                    const resp = await fetch('/api/favoritos');
+                            if (resp.ok) {
+                    const data = await resp.json();
+                            favoritos = new Set(data || []);
+                    }
                     } catch (e) {
-                        console.error(e);
-                        $Contenedor.html('<div class="p-3 text-danger">Error al cargar.</div>');
-                        $EstadoCarga.text('error');
+                    console.warn("No se pudieron cargar favoritos", e);
                     }
-                }
+                    }
 
-                function renderPokemons(lista) {
-                    $Contenedor.empty();
+            async function cargarPokemons() {
+            $EstadoCarga.text('cargando...');
+                    try {
+                    const params = {nombre: estado.nombre, pagina: estado.pagina, tamanio: estado.tamanio};
+                            if (estado.tipos.length > 0)
+                            params['tipos'] = estado.tipos;
+                            const resp = await $.ajax({url: '/api/pokemons', method: 'GET', traditional: true, data: params});
+                            renderPokemons(resp);
+                            $EstadoCarga.text('listo');
+                    } catch (e) {
+            console.error(e);
+                    $Contenedor.html('<div class="p-3 text-danger">Error al cargar.</div>');
+                    $EstadoCarga.text('error');
+            }
+            }
+
+            function renderPokemons(lista) {
+            $Contenedor.empty();
                     if (!lista || lista.length === 0) {
-                        $Contenedor.html('<div class="no-results w-100"><i class="bi bi-search"></i><div>No se encontraron Pokémon</div></div>');
-                        $InformacionTotal.html('<i class="bi bi-collection me-1"></i>0 Pokémon');
-                        return;
-                    }
-                    lista.forEach((el, index) => {
-                        const numero = String(el.id).padStart(3, '0');
-                        const tipos = (el.tipos || []).map(t => `<span class="BadgeTipo" style="background:${el.coloresTipos[t] || '#777'}">${t}</span>`).join('');
-                        $Contenedor.append(`
+            $Contenedor.html('<div class="no-results w-100"><i class="bi bi-search"></i><div>No se encontraron Pokémon</div></div>');
+                    $InformacionTotal.html('<i class="bi bi-collection me-1"></i>0 Pokémon');
+                    return;
+            }
+            lista.forEach((el, index) => {
+            const numero = String(el.id).padStart(3, '0');
+                            const tipos = (el.tipos || [ ] ).map(t =>   `<span class="Bad g eTipo" style="background:${el.coloresTipos[t ]  ||  ' #777'}">${t}</span>`).join('');
+                            const esFavorito = favoritos.has(el.id);
+                            const iconoFavorito = esFavorito ? 'bi-star-fill text-warning' : 'bi-star';
+                    $Contenedor.append(`
                             <div class="ElementoTarjeta" style="animation-delay:${index * 0.1}s">
-                                <div class="TarjetaPokemon" style="background:linear-gradient(135deg,${el.colorPrimario},${el.colorSecundario});" onclick="window.location.href='/pokemon/${el.id}'">
-                                    <div class="MiniaturaPrevia"><img src="${el.spriteUrl}" alt="${el.nombre}"></div>
-                                    <div class="MetadatosPokemon"><div><h5>${el.nombre}</h5><div class="TextoSecundario">#${numero}</div></div><div class="text-end">${tipos}</div></div>
+                                <div class="TarjetaPokemon" style="background:linear-gradient(135deg,${el.colorPrimario},${el.colorSecundario});">
+                            
+                                    <!-- Botón de favorito -->
+                                    <button class="btn btn-link text-white fs-4 position-absolute top-0 end-0 m-2 BtnFavorito" 
+                                            data-id="${el.id}" 
+                                            title="Agregar a favoritos">
+                                        <i class="bi ${iconoFavorito}"></i>
+                                    </button>
+
+                                    <!-- Contenido -->
+                                    <div class="MiniaturaPrevia" onclick="window.location.href='/pokemon/${el.id}'">
+                                        <img src="${el.spriteUrl}" alt="${el.nombre}">
+                                    </div>
+                                    <div class="MetadatosPokemon" onclick="window.location.href='/pokemon/${el.id}'">
+                                        <div>
+                                            <h5>${el.nombre}</h5>
+                                            <div class="TextoSecundario">#${numero}</div>
+                                        </div>
+                                        <div class="text-end">${tipos}</div>
+                                    </div>
                                 </div>
                             </div>`);
                     });
@@ -235,6 +265,26 @@
                     $InformacionPagina.html(`<i class="bi bi-bookmarks me-2"></i>Página ${estado.pagina + 1}`);
                     $BotonAnterior.prop('disabled', estado.pagina === 0);
                     $BotonSiguiente.prop('disabled', lista.length < estado.tamanio);
+
+                    // Listeners favoritos
+                    $('.BtnFavorito').off('click').on('click', async function (e) {
+                        e.stopPropagation(); // evita abrir el detalle
+                        const $btn = $(this);
+                        const id = $btn.data('id');
+                        const icon = $btn.find('i');
+
+                        if (icon.hasClass('bi-star')) {
+                            // Agregar
+                            await fetch(`/api/favoritos/add/${id}`, {method: 'POST'});
+                            favoritos.add(id);
+                            icon.removeClass('bi-star').addClass('bi-star-fill text-warning');
+                        } else {
+                            // Quitar
+                            await fetch(`/api/favoritos/remove/${id}`, {method: 'POST'});
+                            favoritos.delete(id);
+                            icon.removeClass('bi-star-fill text-warning').addClass('bi-star');
+                        }
+                    });
                 }
 
                 // Listeners
@@ -259,19 +309,26 @@
                     estado.pagina = 0;
                     cargarPokemons();
                 });
+
                 $BotonAnterior.on('click', function () {
                     if (estado.pagina > 0) {
                         estado.pagina--;
                         cargarPokemons();
                     }
                 });
+
                 $BotonSiguiente.on('click', function () {
                     estado.pagina++;
                     cargarPokemons();
                 });
 
-                cargarPokemons();
+                // Inicialización
+                (async function init() {
+                    await cargarFavoritos();
+                    await cargarPokemons();
+                })();
             });
         </script>
+
     </body>
 </html>

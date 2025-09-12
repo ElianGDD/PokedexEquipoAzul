@@ -44,27 +44,6 @@ public class ControladorApiPokemon {
         return ResponseEntity.ok(resultado);
     }
 
-    // === DETALLE completo ===
-    @GetMapping("/{id}")
-    public ResponseEntity<Pokemon> obtenerDetalle(@PathVariable int id) {
-        Pokemon pokemon = servicioPokemon.obtenerDetallePokemonPorId(id);
-        if (pokemon == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(pokemon);
-    }
-
-    // === ESTADO precarga ===
-    @GetMapping("/estado-precarga")
-    public Map<String, Object> obtenerEstadoPrecarga() {
-        Map<String, Object> estado = new HashMap<>();
-        estado.put("procesados", servicioPokemon.getEstadoCarga().getProgresoActual());
-        estado.put("total", servicioPokemon.getEstadoCarga().getTotal());
-        estado.put("terminado", servicioPokemon.getEstadoCarga().isTerminado());
-        estado.put("porcentaje", servicioPokemon.getEstadoCarga().getPorcentajeAvance());
-        return estado;
-    }
-
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> buscarPokemonsSearch(
             @RequestParam(defaultValue = "") String nombre,

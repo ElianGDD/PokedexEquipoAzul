@@ -1,67 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
     <head>
-        <meta charset="UTF-8"/>
-        <title th:text="'Pokémon: ' + ${pokemon.nombre}">Detalle Pokémon</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1"/>
+        <title th:text="'Pokédex — ' + ${pokemon.name}">Pokédex</title>
+
+    <th:block layout:fragment="styles">
         <style>
-            .pokemon-card {
-                max-width: 720px;
-                margin: 2rem auto;
-                padding: 1.5rem;
-                border-radius: 16px;
-                box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-                background: #fff;
-            }
-            .pokemon-header {
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-            }
-            .pokemon-header img {
-                width: 120px;
-                height: 120px;
-            }
-            .pokemon-types span {
-                padding: .25rem .6rem;
-                margin-right: .5rem;
-                border-radius: 12px;
-                font-size: .9rem;
-                text-transform: capitalize;
+            .detalle-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 2rem;
                 color: #fff;
             }
-        </style>
-    </head>
-    <body>
-        <div class="container py-4" layout:fragment="body">
-            <div class="pokemon-card">
 
-                <!-- Cabecera -->
-                <div class="pokemon-header">
-                    <img th:src="${pokemon.spriteUrl}" th:alt="${pokemon.nombre}"/>
+            .card-detalle {
+                border-radius: 20px;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+                overflow: hidden;
+                display: flex;
+                flex-wrap: wrap;
+                padding: 2rem;
+            }
+
+            .detalle-img {
+                flex: 1 1 320px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: rgba(255,255,255,0.08);
+                border-radius: 16px;
+                padding: 1.5rem;
+                margin-right: 2rem;
+            }
+
+            .detalle-img img {
+                max-width: 250px;
+                max-height: 250px;
+                object-fit: contain;
+                filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+            }
+
+            .detalle-info {
+                flex: 2 1 400px;
+            }
+
+            .badge-tipo {
+                padding: 6px 12px;
+                border-radius: 999px;
+                font-weight: 500;
+                margin-right: 6px;
+                color: #fff;
+            }
+
+            .stats-container {
+                margin-top: 1rem;
+            }
+
+            .stat-row {
+                margin-bottom: 10px;
+            }
+
+            .stat-name {
+                text-transform: capitalize;
+            }
+
+            .stat-bar {
+                height: 8px;
+                border-radius: 6px;
+                background: rgba(255,255,255,0.2);
+                overflow: hidden;
+            }
+
+            .stat-bar-fill {
+                height: 100%;
+                background: #ffd700;
+            }
+
+            .section {
+                margin-top: 2rem;
+            }
+
+            .sprite-gallery img {
+                max-height: 100px;
+                margin: 0.5rem;
+                object-fit: contain;
+            }
+
+            .moves-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 0.5rem;
+                margin-top: 1rem;
+            }
+
+            .move-badge {
+                background: rgba(255,255,255,0.1);
+                padding: 6px 10px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                text-transform: capitalize;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+    <main class="pokedex-main" layout:fragment="body">
+        <div class="detalle-container">
+
+            <!-- Card principal -->
+            <div class="card-detalle">
+
+                <!-- Imagen principal (GIF si existe, si no artwork) -->
+                <div class="detalle-img">
+                    <img th:src="${pokemon.sprites.versions.generationV.blackWhite.animated.front_default != null ? 
+                         pokemon.sprites.versions.generationV.blackWhite.animated.front_default : 
+                         pokemon.sprites.other.officialArtwork.front_default}"
+                         th:alt="${pokemon.name}">
+                </div>
+
+                <!-- Info básica -->
+                <div class="detalle-info">
+                    <h2 class="fw-bold mb-2">
+                        <span th:text="${pokemon.name}"></span>
+                        <small class="text-light">#<span th:text="${pokemon.id}"></span></small>
+                    </h2>
+
+                    <!-- Características -->
                     <div>
-                        <h2 th:text="${pokemon.nombre}">Nombre</h2>
-                        <p>ID: <span th:text="${pokemon.id}"></span></p>
+                        <div><strong>Altura:</strong> <span th:text="${pokemon.height}"></span> dm</div>
+                        <div><strong>Peso:</strong> <span th:text="${pokemon.weight}"></span> hg</div>
+                        <div><strong>Experiencia base:</strong> <span th:text="${pokemon.base_experience}"></span></div>
+                    </div>
+
+                    <!-- Habilidades -->
+                    <div class="section">
+                        <h5>Habilidades</h5>
+                        <div>
+                            <span th:each="hab : ${pokemon.abilities}"
+                                  class="badge bg-light text-dark me-1"
+                                  th:text="${hab.ability.name}"></span>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="section stats-container">
+                        <h5>Stats</h5>
+                        <div th:each="st : ${pokemon.stats}" class="stat-row">
+                            <div class="d-flex justify-content-between">
+                                <span class="stat-name" th:text="${st.stat.name}"></span>
+                                <span th:text="${st.base_stat}"></span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-bar-fill" th:style="'width:'+${st.base_stat}+'%;'"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Tipos -->
-                <div class="pokemon-types mt-3">
-                    <h4>Tipos</h4>
-                    <span th:each="tipo : ${pokemon.tipos}"
-                          th:text="${tipo}"
-                          th:style="'background:'+${pokemon.coloresTipos[tipo]}"></span>
-                </div>
-
-                <!-- Colores principales -->
-                <div class="mt-3">
-                    <h4>Colores</h4>
-                    <p><strong>Primario:</strong> <span th:text="${pokemon.colorPrimario}"></span></p>
-                    <p><strong>Secundario:</strong> <span th:text="${pokemon.colorSecundario}"></span></p>
-                </div>
-
             </div>
+
+            <!-- Sprites alternativos -->
+            <div class="section">
+                <h4>Sprites</h4>
+                <div class="sprite-gallery d-flex flex-wrap">
+                    <img th:if="${pokemon.sprites.front_default != null}" th:src="${pokemon.sprites.front_default}" alt="front">
+                    <img th:if="${pokemon.sprites.back_default != null}" th:src="${pokemon.sprites.back_default}" alt="back">
+                    <img th:if="${pokemon.sprites.front_shiny != null}" th:src="${pokemon.sprites.front_shiny}" alt="shiny">
+                    <img th:if="${pokemon.sprites.back_shiny != null}" th:src="${pokemon.sprites.back_shiny}" alt="back shiny">
+                </div>
+            </div>
+
+            <!-- Movimientos -->
+            <div class="section">
+                <h4>Movimientos</h4>
+                <div class="moves-grid">
+                    <span th:each="mv : ${pokemon.moves}" class="move-badge" th:text="${mv.move.name}"></span>
+                </div>
+            </div>
+
         </div>
-    </body>
+    </main>
+</body>
 </html>

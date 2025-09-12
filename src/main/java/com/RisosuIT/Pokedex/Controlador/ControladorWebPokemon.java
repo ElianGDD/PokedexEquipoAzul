@@ -1,7 +1,6 @@
 package com.RisosuIT.Pokedex.Controlador;
 
 import com.RisosuIT.Pokedex.DTO.GetAllTypes;
-import com.RisosuIT.Pokedex.DTO.NamedAPIResource;
 import com.RisosuIT.Pokedex.DTO.Pokemon;
 import com.RisosuIT.Pokedex.DTO.PokemonVistaDto;
 import com.RisosuIT.Pokedex.Servicio.ServicioPokemon;
@@ -70,11 +69,13 @@ public class ControladorWebPokemon {
     }
 
     @GetMapping("/pokemon/{id}")
-    public String detallePokemon(@PathVariable int id, Model modelo) {
-        Pokemon detalle = servicioPokemon.obtenerDetallePokemonPorId(id);
-        PokemonVistaDto dto = servicioPokemon.convertirAPokemonVista(detalle);
-        modelo.addAttribute("pokemon", dto);
-        return "pokemon-detail";
+    public String detallePokemon(@PathVariable int id, Model model) {
+        Pokemon pokemon = servicioPokemon.obtenerDetallePokemonPorId(id);
+        if (pokemon == null) {
+            return "error/404"; // o lo que uses para manejar errores
+        }
+        model.addAttribute("pokemon", pokemon);
+        return "pokemon-detail"; // tu template thymeleaf
     }
 
     private Integer extraerIdDesdeUrl(String url) {

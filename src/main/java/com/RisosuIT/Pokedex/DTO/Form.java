@@ -1,17 +1,12 @@
 package com.RisosuIT.Pokedex.DTO;
 
-public class Version {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class Form {
 
     private String name;
     private String url;
-
-    public Version() {
-    }
-
-    public Version(String name, String url) {
-        this.name = name;
-        this.url = url;
-    }
 
     public String getName() {
         return name;
@@ -28,6 +23,5 @@ public class Version {
     public void setUrl(String url) {
         this.url = url;
     }
-    
-    
+
 }

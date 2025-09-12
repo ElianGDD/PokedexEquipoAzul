@@ -48,7 +48,7 @@ public class ServicioPokemon {
         this.ejecutorTareas = ejecutorTareas;
         this.cacheDetallesPokemon = Caffeine.newBuilder()
                 .maximumSize(2000)
-                .expireAfterWrite(Duration.ofHours(1))
+                .expireAfterWrite(Duration.ofHours(8))
                 .build();
     }
 
@@ -121,16 +121,18 @@ public class ServicioPokemon {
 
     private void precargarDetallesPokemonAsincrono() {
         int total = catalogoPokemons.size();
-        CountDownLatch latch = new CountDownLatch(total);
+        estadoCarga.reiniciar(total);
 
-        Semaphore limiteConcurrente = new Semaphore(32);
+        CountDownLatch latch = new CountDownLatch(total);
+        Semaphore limiteConcurrente = new Semaphore(16); // 🔽 reducimos concurrencia para estabilidad
 
         for (Integer id : catalogoPokemons.keySet()) {
             ejecutorTareas.submit(() -> {
                 try {
                     limiteConcurrente.acquire();
-                    obtenerDetallePokemonPorId(id);
+                    cargarPokemonConReintentos(id, 3); // 🔄 reintentos
                 } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
                 } finally {
                     limiteConcurrente.release();
                     estadoCarga.incrementar();
@@ -147,6 +149,27 @@ public class ServicioPokemon {
                 Thread.currentThread().interrupt();
             }
         });
+    }
+
+    private void cargarPokemonConReintentos(int id, int maxIntentos) {
+        int intento = 0;
+        while (intento < maxIntentos) {
+            try {
+                obtenerDetallePokemonPorId(id); // cachea en memoria
+                return; // éxito
+            } catch (Exception e) {
+                intento++;
+                System.err.printf("❌ Error cargando Pokémon %d (intento %d/%d): %s%n",
+                        id, intento, maxIntentos, e.getMessage());
+                try {
+                    Thread.sleep(200L * intento); // backoff
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+        System.err.printf("⚠️ Pokémon %d no pudo cargarse tras %d intentos%n", id, maxIntentos);
     }
 
     // =======================
