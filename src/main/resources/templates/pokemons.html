@@ -135,6 +135,108 @@
                     transform: translateY(0);
                 }
             }
+            .dropdown-tipos {
+                width: 220px;
+                position: relative;
+                font-size: 0.875rem;
+            }
+
+            .dropdown-toggle-tipos {
+                background: rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 12px;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .dropdown-list-tipos {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                max-height: 180px;
+                overflow-y: auto;
+                background: rgba(0,0,0,0.4);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 12px;
+                margin-top: 4px;
+                z-index: 100;
+                backdrop-filter: blur(10px);
+            }
+
+            .dropdown-item-tipo {
+                padding: 6px 12px;
+                cursor: pointer;
+            }
+
+            .dropdown-item-tipo:hover {
+                background: rgba(255,255,255,0.1);
+            }
+            .dropdown-list-tipos .dropdown-item-tipo {
+                color: #fff; /* texto blanco */
+                background-color: transparent; /* fondo transparente */
+            }
+
+            .dropdown-list-tipos .dropdown-item-tipo.bg-primary {
+                background-color: #0d6efd !important; /* bootstrap primary azul */
+                color: #fff !important;
+            }
+
+            .dropdown-list-tipos .dropdown-item-tipo:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                color: #fff;
+            }
+            /* Dropdown de tamaño personalizado */
+            .dropdown-tamanio {
+                width: 120px;
+                position: relative;
+                font-size: 0.875rem;
+            }
+
+            .dropdown-toggle-tamanio {
+                background: rgba(255,255,255,0.15);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 12px;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .dropdown-list-tamanio {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(0,0,0,0.4);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 12px;
+                margin-top: 4px;
+                z-index: 101;
+                backdrop-filter: blur(10px);
+            }
+
+            .dropdown-item-tamanio {
+                padding: 6px 12px;
+                cursor: pointer;
+                color: #fff;
+                background-color: transparent;
+            }
+
+            .dropdown-item-tamanio:hover {
+                background-color: rgba(255,255,255,0.1);
+            }
+
+            .dropdown-item-tamanio.selected {
+                background-color: #0d6efd;
+                color: #fff;
+            }
+
+
         </style>
     </head>
     <body layout:fragment="body">
@@ -159,18 +261,28 @@
                         </div>
                         <div class="d-flex flex-column">
                             <label class="text-white small">Filtro por distintos tipos</label>
-                            <select id="SelectorTiposMultiples" class="form-select form-select-sm" multiple size="1" style="width:220px">
-                                <option th:each="t : ${types}" th:value="${t.name}" th:text="${t.name}"></option>
-                            </select>
+                            <div class="dropdown-tipos" id="DropdownTipos">
+                                <div class="dropdown-toggle-tipos text-white small">Seleccionar Tipo</div>
+                                <div class="dropdown-list-tipos">
+                                    <div class="dropdown-item-tipo text-white small" th:each="t : ${types}"
+                                         th:data-value="${t.name}" th:text="${t.name}"></div>
+                                </div>
+                            </div>
+
                         </div>
                         <div class="d-flex flex-column">
                             <label class="text-white small mb-1 fw-medium">Por página</label>
-                            <select id="TamanoPagina" class="form-select form-select-sm border-0" style="width:120px">
-                                <option value="8">8 cards</option>
-                                <option value="12" selected>12 cards</option>
-                                <option value="24">24 cards</option>
-                            </select>
+                            <div class="dropdown-tamanio" id="DropdownTamanioPagina">
+                                <div class="dropdown-toggle-tamanio text-white small" id="ValorTamanioPagina">12 cards</div>
+                                <div class="dropdown-list-tamanio">
+                                    <div class="dropdown-item-tamanio" data-value="8">8 cards</div>
+                                    <div class="dropdown-item-tamanio selected" data-value="12">12 cards</div>
+                                    <div class="dropdown-item-tamanio" data-value="24">24 cards</div>
+                                </div>
+                            </div>
                         </div>
+
+
                         <div class="ms-auto d-flex gap-2 align-items-end">
                             <button id="BotonAnterior" type="button" class="btn btn-sm btn-custom"><i class="bi bi-chevron-left"></i> Anterior</button>
                             <button id="BotonSiguiente" type="button" class="btn btn-sm btn-custom">Siguiente <i class="bi bi-chevron-right"></i></button>
@@ -217,6 +329,79 @@
                 let favoritos = new Set();
                 let timeoutBusqueda;
                 let reqActual = null;
+
+                // Dropdown de Tipos personalizado
+                const $DropdownTipos = $('#DropdownTipos');
+                const $ToggleTipos = $DropdownTipos.find('.dropdown-toggle-tipos');
+                const $ListaTipos = $DropdownTipos.find('.dropdown-list-tipos');
+
+                let tiposSeleccionados = new Set();
+
+// Toggle abrir/cerrar
+                $ToggleTipos.on('click', function () {
+                    $ListaTipos.toggle();
+                });
+                // Dropdown personalizado de tamaño de página
+                const $DropdownTamanio = $('#DropdownTamanioPagina');
+                const $ToggleTamanio = $DropdownTamanio.find('.dropdown-toggle-tamanio');
+                const $ListaTamanio = $DropdownTamanio.find('.dropdown-list-tamanio');
+                const $ValorTamanio = $('#ValorTamanioPagina');
+
+// Toggle abrir/cerrar
+                $ToggleTamanio.on('click', function () {
+                    $ListaTamanio.toggle();
+                });
+
+// Clic fuera => cerrar dropdown
+                $(document).on('click', function (e) {
+                    if (!$DropdownTamanio.is(e.target) && $DropdownTamanio.has(e.target).length === 0) {
+                        $ListaTamanio.hide();
+                    }
+                });
+
+// Clic en opción => actualizar valor y recargar
+                $ListaTamanio.on('click', '.dropdown-item-tamanio', function () {
+                    const valor = parseInt($(this).data('value'), 10);
+                    if (isNaN(valor))
+                        return;
+
+                    // Actualizar estado
+                    estado.tamanio = valor;
+                    estado.pagina = 0;
+                    cargarPokemons();
+
+                    // UI
+                    $ValorTamanio.text(`${valor} cards`);
+                    $ListaTamanio.find('.dropdown-item-tamanio').removeClass('selected');
+                    $(this).addClass('selected');
+                    $ListaTamanio.hide();
+                });
+
+// Clic fuera => cerrar dropdown
+                $(document).on('click', function (e) {
+                    if (!$DropdownTipos.is(e.target) && $DropdownTipos.has(e.target).length === 0) {
+                        $ListaTipos.hide();
+                    }
+                });
+
+// Clic en tipo => toggle selección
+                $ListaTipos.on('click', '.dropdown-item-tipo', function () {
+                    const tipo = $(this).data('value');
+
+                    if (tiposSeleccionados.has(tipo)) {
+                        tiposSeleccionados.delete(tipo);
+                        $(this).removeClass('bg-primary text-white');
+                    } else {
+                        tiposSeleccionados.add(tipo);
+                        $(this).addClass('bg-primary text-white');
+                    }
+
+                    // Actualizar estado global y recargar
+                    estado.tipos = Array.from(tiposSeleccionados);
+                    estado.pagina = 0;
+                    cargarPokemons();
+                });
+
 
                 // Carga favoritos (JSON de sesión)
                 async function cargarFavoritos() {
