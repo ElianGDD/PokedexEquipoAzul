@@ -1,17 +1,12 @@
 package com.RisosuIT.Pokedex.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class OfficialArtwork {
 
-    public String front_default;
-    public String front_shiny;
-
-    public OfficialArtwork() {
-    }
-
-    public OfficialArtwork(String front_defaul, String front_shiny) {
-        this.front_default = front_defaul;
-        this.front_shiny = front_shiny;
-    }
+    private String front_default;
+    private String front_shiny;
 
     public String getFront_default() {
         return front_default;

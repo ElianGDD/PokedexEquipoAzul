@@ -1,25 +1,19 @@
 package com.RisosuIT.Pokedex.DTO;
 
-public class Abilities {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-    private String ability;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class AbilitySlot {
+
+    private NamedAPIResource ability;
     private boolean is_hidden;
     private int slot;
 
-    public Abilities() {
-    }
-
-    public Abilities(String ability, boolean is_hidden, int slot) {
-        this.ability = ability;
-        this.is_hidden = is_hidden;
-        this.slot = slot;
-    }
-
-    public String getAbility() {
+    public NamedAPIResource getAbility() {
         return ability;
     }
 
-    public void setAbility(String ability) {
+    public void setAbility(NamedAPIResource ability) {
         this.ability = ability;
     }
 

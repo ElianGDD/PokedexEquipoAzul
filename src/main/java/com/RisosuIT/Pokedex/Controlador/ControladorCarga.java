@@ -2,6 +2,7 @@ package com.RisosuIT.Pokedex.Controlador;
 
 import com.RisosuIT.Pokedex.Servicio.ServicioPokemon;
 import com.RisosuIT.Pokedex.Estado.EstadoCargaAplicacion;
+import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,16 +24,20 @@ public class ControladorCarga {
 
     @PostMapping("/start-load")
     public ResponseEntity<Void> iniciarCarga() {
+        if (!estadoCarga.isTerminado() && estadoCarga.getProgresoActual() > 0) {
+            return ResponseEntity.status(409).build(); 
+        }
         servicioPokemon.precargarDatos();
         return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/load-status")
-    public Map<String, Object> estado() {
-        return Map.of(
-                "loaded", estadoCarga.getProgresoActual(),
-                "total", estadoCarga.getTotal(),
-                "status", estadoCarga.isTerminado() ? "done" : "building"
-        );
+    public Map<String, Object> loadStatus() {
+        Map<String, Object> estado = new HashMap<>();
+        estado.put("loaded", servicioPokemon.getEstadoCarga().getProgresoActual());
+        estado.put("total", servicioPokemon.getEstadoCarga().getTotal());
+        estado.put("status", servicioPokemon.getEstadoCarga().isTerminado() ? "done" : "loading");
+        return estado;
     }
+
 }

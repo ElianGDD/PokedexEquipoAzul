@@ -12,7 +12,7 @@ public class ConfigTareas {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(10);
         executor.setMaxPoolSize(20);
-        executor.setQueueCapacity(500);
+        executor.setQueueCapacity(1350);
         executor.setThreadNamePrefix("PrecargaPokemon-");
         executor.initialize();
         return executor;
