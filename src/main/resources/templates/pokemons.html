@@ -43,18 +43,22 @@
             }
 
             /* ======= NAVBAR “Pokedex panel” ======= */
-            .navbar-custom{
-                position:sticky;
-                top:0;
+            .navbar-custom {
+                position: sticky;
+                top: 0;
                 border-radius: var(--radius);
                 padding: .85rem 1.25rem !important;
                 background:
                     linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.22)) padding-box,
                     linear-gradient(180deg,#ffb4b4,#541010) border-box !important;
-                border:2px solid transparent !important;
+                border: 2px solid transparent !important;
                 box-shadow: var(--shadow);
-                overflow: hidden;
+
+                /* CORREGIDO */
+                overflow: visible;
+                z-index: 100;
             }
+
             .navbar-custom::before,
             .navbar-custom::after{
                 content:'';
@@ -430,12 +434,16 @@
 
                         <div class="d-flex flex-column">
                             <label class="text-white small mb-1 fw-medium">Por página</label>
-                            <select id="TamanoPagina" class="form-select form-select-sm border-0" style="width:120px">
-                                <option value="5">5 cards</option>
-                                <option value="10" selected>10 cards</option>
-                                <option value="20">20 cards</option>
-                            </select>
+                            <div class="dropdown-tamanio" id="DropdownTamanio">
+                                <div class="dropdown-toggle-tamanio text-white small">10 cards</div>
+                                <div class="dropdown-list-tamanio">
+                                    <div class="dropdown-item-tamanio" data-value="5">5 cards</div>
+                                    <div class="dropdown-item-tamanio selected" data-value="10">10 cards</div>
+                                    <div class="dropdown-item-tamanio" data-value="20">20 cards</div>
+                                </div>
+                            </div>
                         </div>
+
 
                         <div class="ms-auto d-flex gap-2 align-items-end">
                             <button id="BotonAnterior" type="button" class="btn btn-sm btn-custom">
@@ -475,6 +483,78 @@
                 const $InformacionTotal = $('#InformacionTotal');
                 const $InformacionPagina = $('#InformacionPagina');
                 const $EstadoCarga = $('#EstadoCarga');
+                // === Inicializa dropdown de tipos ===
+                const $DropdownTipos = $('#DropdownTipos');
+                const $ToggleTipos = $DropdownTipos.find('.dropdown-toggle-tipos');
+                const $ListaTipos = $DropdownTipos.find('.dropdown-list-tipos');
+                const $ItemsTipos = $DropdownTipos.find('.dropdown-item-tipo');
+
+                let tiposSeleccionados = [];
+
+                // === Dropdown personalizado para tamaño de página ===
+                const $DropdownTamanio = $('#DropdownTamanio');
+                const $ToggleTamanio = $DropdownTamanio.find('.dropdown-toggle-tamanio');
+                const $ListaTamanio = $DropdownTamanio.find('.dropdown-list-tamanio');
+                const $ItemsTamanio = $DropdownTamanio.find('.dropdown-item-tamanio');
+
+                $ToggleTamanio.on('click', function (e) {
+                    e.stopPropagation();
+                    $ListaTamanio.toggle();
+                });
+
+                $ItemsTamanio.on('click', function (e) {
+                    e.stopPropagation();
+                    const $item = $(this);
+                    const valor = parseInt($item.data('value'), 10);
+
+                    // Visual
+                    $ItemsTamanio.removeClass('selected');
+                    $item.addClass('selected');
+                    $ToggleTamanio.text($item.text());
+
+                    // Estado
+                    estado.tamanio = valor;
+                    estado.pagina = 0;
+                    cargarPokemons();
+                });
+
+// Ocultar al hacer clic fuera
+                $(document).on('click', function () {
+                    $ListaTamanio.hide();
+                });
+
+                $ToggleTipos.on('click', function (e) {
+                    e.stopPropagation(); // No cerrar al hacer clic en el toggle
+                    $ListaTipos.toggle();
+                });
+
+
+// Selección de tipo
+                $ItemsTipos.on('click', function (e) {
+                    e.stopPropagation();
+                    const $item = $(this);
+                    const valor = $item.data('value');
+
+                    // Toggle selección
+                    const index = tiposSeleccionados.indexOf(valor);
+                    if (index === -1) {
+                        tiposSeleccionados.push(valor);
+                        $item.addClass('bg-primary'); // Marcado visual
+                    } else {
+                        tiposSeleccionados.splice(index, 1);
+                        $item.removeClass('bg-primary');
+                    }
+
+                    // Actualiza estado y recarga
+                    estado.tipos = tiposSeleccionados.slice();
+                    estado.pagina = 0;
+                    cargarPokemons();
+                });
+
+// Ocultar al hacer clic fuera
+                $(document).on('click', function () {
+                    $ListaTipos.hide();
+                });
 
                 // Estado
                 let estado = {
