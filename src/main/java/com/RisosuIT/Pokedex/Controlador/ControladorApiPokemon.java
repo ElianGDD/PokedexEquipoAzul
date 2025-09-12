@@ -1,10 +1,7 @@
 package com.RisosuIT.Pokedex.Controlador;
 
-import com.RisosuIT.Pokedex.DTO.NamedAPIResource;
-import com.RisosuIT.Pokedex.DTO.Pokemon;
 import com.RisosuIT.Pokedex.DTO.PokemonVistaDto;
 import com.RisosuIT.Pokedex.Servicio.ServicioPokemon;
-import com.RisosuIT.Pokedex.Servicio.ServicioTipo;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -16,11 +13,9 @@ import org.springframework.web.bind.annotation.*;
 public class ControladorApiPokemon {
 
     private final ServicioPokemon servicioPokemon;
-    private final ServicioTipo servicioTipo;
 
-    public ControladorApiPokemon(ServicioPokemon servicioPokemon, ServicioTipo servicioTipo) {
+    public ControladorApiPokemon(ServicioPokemon servicioPokemon) {
         this.servicioPokemon = servicioPokemon;
-        this.servicioTipo = servicioTipo;
     }
 
     // === LISTADO paginado + búsqueda ===
@@ -69,6 +64,24 @@ public class ControladorApiPokemon {
         respuesta.put("hasNext", pokemons.size() == tamanio);
 
         return ResponseEntity.ok(respuesta);
+    }
+
+    @GetMapping("/estado-precarga")
+
+    public Map<String, Object> obtenerEstadoPrecarga() {
+
+        Map<String, Object> estado = new HashMap<>();
+
+        estado.put("procesados", servicioPokemon.getEstadoCarga().getProgresoActual());
+
+        estado.put("total", servicioPokemon.getEstadoCarga().getTotal());
+
+        estado.put("terminado", servicioPokemon.getEstadoCarga().isTerminado());
+
+        estado.put("porcentaje", servicioPokemon.getEstadoCarga().getPorcentajeAvance());
+
+        return estado;
+
     }
 
 }
